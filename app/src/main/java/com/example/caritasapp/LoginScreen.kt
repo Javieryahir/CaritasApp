@@ -46,13 +46,13 @@ fun LoginScreen() {
         Text(
             text = "Ingresa con Google",
             fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
+            fontSize = 30.sp,
         )
 
         // Subtítulo
         Text(
             text = "Crea/Ingresa con el siguiente botón",
-            fontSize = 14.sp,
+            fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
 
@@ -87,7 +87,7 @@ fun LoginScreen() {
         // Texto de términos
         Text(
             text = "Al hacer clic en «Continuar», aceptas nuestros Términos de servicio y nuestra Política de privacidad.",
-            fontSize = 12.sp,
+            fontSize = 18.sp,
             color = Color.Gray,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center

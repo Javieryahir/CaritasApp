@@ -35,7 +35,7 @@ fun ConfirmReservation() {
         // Título
         Text(
             text = "Revisar y Confirmar",
-            fontSize = 22.sp,
+            fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp),
             textAlign = TextAlign.Center
@@ -65,7 +65,7 @@ fun ConfirmReservation() {
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = "Locacion de Reservación",
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -119,7 +119,7 @@ fun ConfirmReservation() {
                     .padding(top = 16.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                Text("Total", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Total", fontSize = 25.sp, fontWeight = FontWeight.Bold)
                 Text(
                     text = "~$100 Pesos",
                     fontSize = 20.sp,
@@ -134,7 +134,7 @@ fun ConfirmReservation() {
         // Nota
         Text(
             text = "El precio es un estimado. El precio total se le dira en el albergue.",
-            fontSize = 12.sp,
+            fontSize = 20.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -159,7 +159,7 @@ fun ConfirmReservation() {
                 contentDescription = "Confirmar",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Confirmar", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text("Confirmar", fontSize = 25.sp, fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -179,8 +179,8 @@ fun InfoRow(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column {
-            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(subtitle, fontSize = 14.sp, color = Color.Gray)
+            Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, fontSize = 16.sp, color = Color.Gray)
         }
         Button(
             onClick = { /* TODO */ },
@@ -197,7 +197,7 @@ fun InfoRow(
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text(buttonText, fontSize = 14.sp)
+            Text(buttonText, fontSize = 18.sp)
         }
     }
 }
