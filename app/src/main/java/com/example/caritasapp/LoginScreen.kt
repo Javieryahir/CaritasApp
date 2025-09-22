@@ -1,5 +1,6 @@
 package com.example.caritasapp
 
+import MapScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,11 +20,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(navController: NavController) {
+
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -58,7 +65,7 @@ fun LoginScreen() {
 
         // Botón Google
         Button(
-            onClick = { /* TODO: acción login */ },
+            onClick = {navController.navigate("search") },
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White,
@@ -95,8 +102,3 @@ fun LoginScreen() {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewLoginScreen() {
-    LoginScreen()
-}
