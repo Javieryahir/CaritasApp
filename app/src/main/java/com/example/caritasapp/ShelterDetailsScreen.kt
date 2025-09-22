@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -23,9 +24,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 
 @Composable
-fun ShelterDetailsScreen() {
+fun ShelterDetailsScreen(navController: NavController) {
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -69,20 +75,19 @@ fun ShelterDetailsScreen() {
             )
 
             // Mapa
-            Image(
-                painter = painterResource(id = R.drawable.map),
-                contentDescription = "Mapa",
-                contentScale = ContentScale.Crop,
+            GoogleMap(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
                     .padding(bottom = 24.dp)
-                    .background(
-                        color = Color(0xFFF5F5F5),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-            )
+                    .clip(RoundedCornerShape(16.dp)),
 
+            ) {
+                Marker(
+                    title = "Ubicación",
+                    snippet = "Mapa dentro de la tarjeta"
+                )
+            }
             // Sección de servicios
             Text(
                 text = "Añadir Servicios",
@@ -157,5 +162,5 @@ fun SelectableServiceItem(icon: ImageVector, label: String) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PreviewShelterDetails() {
-    ShelterDetailsScreen()
+
 }

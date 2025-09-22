@@ -47,6 +47,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
+import androidx.navigation.NavController
 import java.util.Calendar
 
 
@@ -101,7 +102,7 @@ fun createTextMarker(context: android.content.Context, text: String): BitmapDesc
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapScreen() {
+fun MapScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -194,7 +195,7 @@ fun MapScreen() {
                             }
                             Button(
                                 onClick = {
-                                    // Lógica para abrir la pantalla de detalles
+                                    navController.navigate("shelter")
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = androidx.compose.ui.graphics.Color.Black,
@@ -293,8 +294,3 @@ fun MapScreen() {
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewMapScreen() {
-    MapScreen()
-}
