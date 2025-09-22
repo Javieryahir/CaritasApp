@@ -31,28 +31,28 @@ fun HealthFormsScreen() {
         // Título
         Text(
             text = "Formulario de Salud",
-            fontSize = 24.sp,
+            fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp),
             textAlign = TextAlign.Center
         )
 
         // Sección: Alergias
-        Text("Listado de Alergias", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Listado de Alergias", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         ToggleableField(label = "Alergia")
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Sección: Discapacidades
-        Text("Discapacidades", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Discapacidades", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         ToggleableField(label = "Discapacidad")
 
         Spacer(modifier = Modifier.height(24.dp))
 
         // Sección: Medicamentos
-        Text("Medicamentos Actuales", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text("Medicamentos Actuales", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         ToggleableField(label = "Medicamento")
 
@@ -75,7 +75,7 @@ fun HealthFormsScreen() {
                 contentDescription = "Reservación",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Reservación", fontSize = 18.sp, fontWeight = FontWeight.Medium)
+            Text("Reservación", fontSize = 22.sp, fontWeight = FontWeight.Medium)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -83,7 +83,7 @@ fun HealthFormsScreen() {
         // Política
         Text(
             text = "Política de privacidad.",
-            fontSize = 12.sp,
+            fontSize = 20.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
