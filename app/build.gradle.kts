@@ -20,7 +20,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // ⬇️ Debe llevar paréntesis y comillas escapadas
+        // Debe llevar paréntesis y comillas escapadas
         // Si usas EMULADOR: http://10.0.2.2:8080/
         buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
         // Si usas DISPOSITIVO FÍSICO: pon la IP de tu PC, ej:
@@ -69,17 +69,11 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("androidx.compose.material:material-icons-extended")
-
-    // 🔶 JSON (Kotlinx Serialization)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
-    // 🔷 Red (Retrofit + OkHttp + converter para Kotlinx Serialization)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-
-    // 🔹 ViewModel para llamadas desde la UI
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
 }

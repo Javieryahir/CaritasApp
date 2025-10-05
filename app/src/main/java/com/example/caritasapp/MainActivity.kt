@@ -15,10 +15,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            //MyApp()
-            MaterialTheme {
-                com.example.caritasapp.debug.HostelsDebugScreen()
-            }
+            MyApp()
+            //MaterialTheme {
+            //    com.example.caritasapp.debug.HostelsDebugScreen()
+            //}
         }
     }
 }
