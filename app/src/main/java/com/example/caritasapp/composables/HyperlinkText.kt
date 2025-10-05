@@ -35,24 +35,26 @@ fun HyperlinkText(
         append(fullText)
 
         for ((linkText, linkUrl) in hyperlinks) {
-            val startIndex = fullText.indexOf(linkText)
-            if (startIndex == -1) continue
-            val endIndex = startIndex + linkText.length
+            var startIndex = fullText.indexOf(linkText)
+            while (startIndex != -1) {
+                val endIndex = startIndex + linkText.length
 
-            addStyle(
-                style = SpanStyle(
-                    color = textColor,
-                    textDecoration = TextDecoration.Underline
-                ),
-                start = startIndex,
-                end = endIndex
-            )
-            addStringAnnotation(
-                tag = "URL",
-                annotation = linkUrl,
-                start = startIndex,
-                end = endIndex
-            )
+                addStyle(
+                    style = SpanStyle(
+                        color = textColor,
+                        textDecoration = TextDecoration.Underline
+                    ),
+                    start = startIndex,
+                    end = endIndex
+                )
+                addStringAnnotation(
+                    tag = "URL",
+                    annotation = linkUrl,
+                    start = startIndex,
+                    end = endIndex
+                )
+                startIndex = fullText.indexOf(linkText, endIndex)
+            }
         }
     }
 
