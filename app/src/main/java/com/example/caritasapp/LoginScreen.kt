@@ -24,6 +24,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.caritasapp.composables.HyperlinkText
 
 
 @Composable
@@ -92,13 +93,16 @@ fun LoginScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Texto de términos
-        Text(
-            text = "Al hacer clic en «Continuar», aceptas nuestros Términos de servicio y nuestra Política de privacidad.",
+        HyperlinkText(
+            fullText = "Al hacer clic en «Continuar», aceptas nuestros Términos de servicio y nuestra Política de privacidad.",
+            hyperlinks = mapOf(
+                "Términos de servicio" to "https://tecmx-my.sharepoint.com/:b:/g/personal/a01782862_tec_mx/EQHQJcc5Do5HkaOYdGlx5awB4R3---4CjhpAi2vJ_Zj6aw?e=gRy9zF",
+                "Política de privacidad" to "https://tecmx-my.sharepoint.com/:b:/g/personal/a01782862_tec_mx/EReaHOm1lSpCgVQYi3YX_tMBlSo7GM6hFJvruEi8Rl-gUw?e=yaU7tm"
+            ),
             fontSize = 18.sp,
-            color = Color.Gray,
+            textColor = Color.Gray,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
     }
 }
-

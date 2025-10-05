@@ -18,6 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.caritasapp.composables.HyperlinkText
+
 
 @Composable
 fun HealthFormsScreen() {
@@ -81,10 +83,14 @@ fun HealthFormsScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Política
-        Text(
-            text = "Política de privacidad.",
-            fontSize = 20.sp,
-            color = Color.Gray,
+        HyperlinkText(
+            fullText = "Política de privacidad",
+            hyperlinks = mapOf(
+                "Política de privacidad" to "https://tecmx-my.sharepoint.com/:b:/r/personal/a01782862_tec_mx/Documents/AppMovil/PoliticasdePrivacidad/AVISO%20DE%20PRIVACIDAD%202025.pdf?csf=1&web=1&e=Tum1V9"
+            ),
+            fontSize = 18.sp,
+            textColor = Color.Gray,
+            modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
     }
