@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/caritasapp/debug/HostelsDebugScreen.kt
 package com.example.caritasapp.debug
 
 import androidx.compose.foundation.layout.*
