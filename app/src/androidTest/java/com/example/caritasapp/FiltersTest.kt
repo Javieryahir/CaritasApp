@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 @RunWith(AndroidJUnit4::class)
 class FiltersTest {
 
-    // Usamos createComposeRule() para no lanzar la Activity completa.
+    // Usamos createComposeRule() para sno lanzar la Activity completa.
     @get:Rule
     val compose = createComposeRule()
 
