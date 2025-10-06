@@ -79,6 +79,10 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import androidx.compose.ui.platform.testTag
+import com.example.caritasapp.debug.TestTags
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 
 private val Accent = Color(0xFF009AA7)
 private const val ACCENT_INT = 0xFF009AA7.toInt()
@@ -228,7 +232,8 @@ fun ReservationPage(navController: NavController) {
         sheetContent = {
             SelectionSheet(
                 location = selectedLocation,
-                onDetailsClick = { navController.navigate("shelter") }
+                onDetailsClick = { navController.navigate("shelter") },
+                onConfirmClick = { navController.navigate("health") }
             )
         },
         topBar = {
@@ -341,7 +346,6 @@ private fun TopControls(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Texto mostrado en el chip y tamaño adaptativo
         val dateText = selectedDate.ifBlank { "Seleccionar Fechas" }
         val fontSizeSp = when {
             dateText.length <= 20 -> 22.sp
@@ -350,7 +354,6 @@ private fun TopControls(
             else -> 16.sp
         }
 
-        // CHIP de fechas: contenido centrado
         Surface(
             onClick = onPickDate,
             shape = RoundedCornerShape(32.dp),
@@ -383,13 +386,13 @@ private fun TopControls(
             }
         }
 
-        // Botón de filtros: tamaño ESTÁTICO
+        // Filtros + TAG
         Surface(
             onClick = onFilterClick,
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier.size(64.dp).testTag(TestTags.ResFiltersButton)
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
@@ -401,6 +404,8 @@ private fun TopControls(
         }
     }
 }
+
+
 
 @Composable
 private fun ShelterMap(
@@ -435,7 +440,8 @@ private fun ShelterMap(
 @Composable
 private fun SelectionSheet(
     location: LocationData?,
-    onDetailsClick: () -> Unit
+    onDetailsClick: () -> Unit,
+    onConfirmClick: () -> Unit
 ) {
     if (location == null) return
 
@@ -444,7 +450,6 @@ private fun SelectionSheet(
             .fillMaxWidth()
             .padding(bottom = 8.dp)
     ) {
-        // Imagen (placeholder)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -452,16 +457,14 @@ private fun SelectionSheet(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceVariant
-        ) { /* TODO: cargar imagen real con Coil */ }
+        ) { /* placeholder de imagen */ }
 
-        // Contenido centrado
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Nombre centrado
             Text(
                 text = location.name,
                 style = MaterialTheme.typography.headlineSmall,
@@ -472,7 +475,6 @@ private fun SelectionSheet(
 
             Spacer(Modifier.height(16.dp))
 
-            // Cupos
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = location.capacity.toString(),
@@ -489,7 +491,7 @@ private fun SelectionSheet(
 
             Spacer(Modifier.height(18.dp))
 
-            // Botón "Detalles" debajo de Cupos
+            // Botón Detalles (ya lo tenías)
             FilledTonalButton(
                 onClick = onDetailsClick,
                 shape = RoundedCornerShape(28.dp),
@@ -500,15 +502,26 @@ private fun SelectionSheet(
                     horizontal = 24.dp, vertical = 10.dp
                 )
             ) {
-                Text(
-                    "Detalles",
-                    style = MaterialTheme.typography.titleLarge, // ~22sp por defecto
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Detalles", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+
+            // NUEVO botón Continuar para ir a HealthForms (con TAG)
+            Spacer(Modifier.height(10.dp))
+            Button(
+                onClick = onConfirmClick,
+                colors = ButtonDefaults.buttonColors(),
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier
+                    .height(56.dp)
+                    .widthIn(min = 200.dp)
+                    .testTag(TestTags.ResConfirmShelterButton)
+            ) {
+                Text("Continuar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
         }
     }
 }
+
 
 @Composable
 private fun BottomNavBar(modifier: Modifier = Modifier) {
@@ -551,7 +564,6 @@ private fun ServiceFilterSheet(
     onClose: () -> Unit
 ) {
     val accent = Color(0xFF009AA7)
-
     val services = listOf(
         ServiceItem("Desayuno",   R.drawable.breakfast_dining_24px),
         ServiceItem("Comida",     R.drawable.meal_lunch_24px),
@@ -565,36 +577,26 @@ private fun ServiceFilterSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag(TestTags.ResFiltersSheetRoot)
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Filtros",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = onClose) {
-                Text(
-                    "Cerrar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text("Filtros", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            TextButton(
+                onClick = onClose,
+                modifier = Modifier.testTag(TestTags.ResFiltersCloseBtn)
+            ) { Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
         }
 
         Spacer(Modifier.height(8.dp))
 
         services.chunked(2).forEach { row ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -608,10 +610,11 @@ private fun ServiceFilterSheet(
                 }
             }
         }
-
         Spacer(Modifier.height(12.dp))
     }
 }
+
+
 
 @Composable
 private fun ServiceCard(
@@ -624,27 +627,21 @@ private fun ServiceCard(
     val borderColor = if (selected) accent else MaterialTheme.colorScheme.outlineVariant
     val iconTint = if (selected) accent else MaterialTheme.colorScheme.onSurface
     val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    val tag = TestTags.filterService(item.label)
 
     Surface(
         onClick = onClick,
         shape = shape,
         tonalElevation = if (selected) 2.dp else 0.dp,
-        border = BorderStroke(2.dp, borderColor)
+        border = BorderStroke(2.dp, borderColor),
+        modifier = Modifier.testTag(tag)
     ) {
         Column(
-            modifier = Modifier
-                .width(140.dp)          // ancho de la tarjeta
-                .padding(12.dp),
+            modifier = Modifier.width(140.dp).padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = containerColor
-            ) {
-                Box(
-                    modifier = Modifier.size(96.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+            Surface(shape = RoundedCornerShape(18.dp), color = containerColor) {
+                Box(Modifier.size(96.dp), contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = ImageVector.vectorResource(id = item.iconRes),
                         contentDescription = item.label,
@@ -656,10 +653,7 @@ private fun ServiceCard(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp
-                ),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 22.sp),
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2
@@ -667,6 +661,8 @@ private fun ServiceCard(
         }
     }
 }
+
+
 
 @Composable
 private fun ShelterPickerButton(
@@ -679,7 +675,7 @@ private fun ShelterPickerButton(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 3.dp,
         border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = modifier
+        modifier = modifier.testTag(TestTags.ResShelterPickerButton)
     ) {
         Row(
             modifier = Modifier
@@ -689,20 +685,14 @@ private fun ShelterPickerButton(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Filled.LocationOn,
-                contentDescription = null,
-                modifier = Modifier.size(26.dp)
-            )
+            Icon(imageVector = Icons.Filled.LocationOn, contentDescription = null, modifier = Modifier.size(26.dp))
             Spacer(Modifier.width(10.dp))
-            Text(
-                "Albergues Disponibles",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("Albergues Disponibles", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
         }
     }
 }
+
+
 
 @Composable
 private fun ShelterPickerSheet(
@@ -715,23 +705,16 @@ private fun ShelterPickerSheet(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
+            .testTag(TestTags.ResPickerSheetRoot)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Albergues",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Albergues", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             TextButton(onClick = onClose) {
-                Text(
-                    "Cerrar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
         }
 
@@ -739,6 +722,7 @@ private fun ShelterPickerSheet(
 
         locations.forEach { loc ->
             val isSelected = selected?.name == loc.name
+            val locTag = TestTags.pickerLocation(loc.name)
             Surface(
                 onClick = { onSelect(loc) },
                 shape = RoundedCornerShape(16.dp),
@@ -748,11 +732,10 @@ private fun ShelterPickerSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
+                    .testTag(locTag)
             ) {
                 Row(
-                    modifier = Modifier
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 14.dp),
+                    modifier = Modifier.heightIn(min = 56.dp).padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -787,7 +770,7 @@ private fun ShelterPickerSheet(
                 }
             }
         }
-
         Spacer(Modifier.height(8.dp))
     }
 }
+

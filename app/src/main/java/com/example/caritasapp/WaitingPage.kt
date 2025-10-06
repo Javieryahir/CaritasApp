@@ -17,6 +17,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
+import com.example.caritasapp.debug.TestTags
 
 @Composable
 fun WaitingPage() {
@@ -24,7 +26,8 @@ fun WaitingPage() {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF4A98A6)) // Fondo azul
-            .padding(24.dp),
+            .padding(24.dp)
+            .testTag(TestTags.WaitingPageRoot),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -76,6 +79,7 @@ fun WaitingPage() {
             ),
             shape = CircleShape,
             modifier = Modifier.size(80.dp)
+                .testTag(TestTags.WaitingPageConfirmButton)
         ) {
             Icon(
                 imageVector = Icons.Filled.Check,

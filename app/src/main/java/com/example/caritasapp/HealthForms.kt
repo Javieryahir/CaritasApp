@@ -19,10 +19,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.caritasapp.composables.HyperlinkText
+import androidx.compose.ui.platform.testTag
+import com.example.caritasapp.debug.TestTags
 
 
 @Composable
-fun HealthFormsScreen() {
+fun HealthFormsScreen(onReserve: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,7 +64,7 @@ fun HealthFormsScreen() {
 
         // Botón Reservación
         Button(
-            onClick = { /* TODO */ },
+            onClick = { onReserve() },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF2D9CDB),
                 contentColor = Color.White
@@ -71,6 +73,7 @@ fun HealthFormsScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
+                .testTag(TestTags.HFReserveButton)
         ) {
             Icon(
                 imageVector = Icons.Filled.CalendarToday,
@@ -116,6 +119,7 @@ fun ToggleableField(label: String) {
             modifier = Modifier
                 .weight(1f)
                 .background(Color(0xFFB3E5FC), RoundedCornerShape(8.dp))
+                .testTag(TestTags.hfTextField(label))
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -126,6 +130,7 @@ fun ToggleableField(label: String) {
             modifier = Modifier
                 .size(40.dp)
                 .background(Color(0xFFB3E5FC), CircleShape)
+                .testTag(TestTags.hfToggle(label))
         ) {
             if (isEnabled) {
                 Icon(Icons.Filled.Remove, contentDescription = "Desactivar")
