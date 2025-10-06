@@ -25,7 +25,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.caritasapp.composables.HyperlinkText
-
+import androidx.compose.ui.platform.testTag
+import com.example.caritasapp.debug.TestTags
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -75,6 +76,7 @@ fun LoginScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
+                .testTag(TestTags.LoginGoogleButton)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

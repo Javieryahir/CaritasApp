@@ -29,8 +29,11 @@ fun MyApp() {
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login")   { LoginScreen(navController) }
-        // 👇 Antes: MapScreen(navController). Ahora: ReservationPage(navController)
-        composable("search")  { ReservationPage(navController) }
+        composable("search")  { com.example.caritasapp.reservations.ReservationPage(navController) }
         composable("shelter") { ShelterDetailsScreen(navController) }
+
+        // NUEVOS
+        composable("health")  { HealthFormsScreen(onReserve = { navController.navigate("waiting") }) }
+        composable("waiting") { WaitingPage() }
     }
 }
