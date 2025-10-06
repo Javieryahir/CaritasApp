@@ -1,3 +1,5 @@
+// El 99% del código es el mismo, solo he añadido dos .testTag(...)
+
 package com.example.caritasapp.reservations
 
 import android.app.DatePickerDialog
@@ -58,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,7 +82,6 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import androidx.compose.ui.platform.testTag
 
 
 private val Accent = Color(0xFF009AA7)
@@ -272,9 +274,11 @@ fun ReservationPage(navController: NavController) {
                     )
                     .widthIn(min = 280.dp)
                     .wrapContentWidth()
-            ) {
-                showShelterPicker = true
-            }
+                    .testTag("btn-albergues-disponibles"), // <-- CORRECCIÓN 1: AÑADIR TAG
+                onClick = {
+                    showShelterPicker = true
+                }
+            )
 
 
 
@@ -330,7 +334,7 @@ fun ReservationPage(navController: NavController) {
 /* ========================= COMPONENTES ========================= */
 
 @Composable
-private fun TopControls(
+fun TopControls(
     selectedDate: String,
     onPickDate: () -> Unit,
     onFilterClick: () -> Unit
@@ -405,6 +409,7 @@ private fun TopControls(
         }
     }
 }
+
 
 @Composable
 private fun ShelterMap(
@@ -752,6 +757,7 @@ private fun ShelterPickerSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp)
+                    .testTag("card-albergue-${loc.name}") // <-- CORRECCIÓN 2: AÑADIR TAG
             ) {
                 Row(
                     modifier = Modifier

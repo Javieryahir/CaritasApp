@@ -76,4 +76,52 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+
+    dependencies {
+        implementation(libs.androidx.core.ktx)
+        implementation(libs.androidx.lifecycle.runtime.ktx)
+        implementation(libs.androidx.activity.compose)
+
+        // Compose
+        implementation(platform(libs.androidx.compose.bom))
+        implementation(libs.androidx.ui)
+        implementation(libs.androidx.ui.graphics)
+        implementation(libs.androidx.ui.tooling.preview)
+        implementation(libs.androidx.material3)
+        debugImplementation(libs.androidx.ui.tooling)
+
+        // Navegación / mapas (igual que tenías)
+        implementation("androidx.navigation:navigation-compose:2.7.0")
+        implementation("com.google.maps.android:maps-compose:4.3.3")
+        implementation("com.google.android.gms:play-services-maps:18.2.0")
+        implementation("androidx.compose.material:material-icons-extended")
+
+        // Red / JSON (igual que tenías)
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+        implementation("com.squareup.retrofit2:retrofit:2.11.0")
+        implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
+        implementation("com.squareup.okhttp3:okhttp:4.12.0")
+        implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+        // Lifecycle (igual)
+        implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4")
+        implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
+
+        // ---- TESTS ----
+        // Unit tests locales
+        testImplementation("junit:junit:4.13.2")
+
+        // Instrumented tests (alineados a la familia 1.6.x / 3.6.x)
+        androidTestImplementation("androidx.test:runner:1.6.2")
+        androidTestImplementation("androidx.test:rules:1.6.1")
+        androidTestImplementation("androidx.test.ext:junit:1.2.1")
+        androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+
+        // Compose UI testing
+        androidTestImplementation(platform(libs.androidx.compose.bom))
+        androidTestImplementation(libs.androidx.ui.test.junit4)
+        debugImplementation(libs.androidx.ui.test.manifest)
+
+    }
+
 }
