@@ -79,6 +79,8 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import androidx.compose.ui.platform.testTag
+
 
 private val Accent = Color(0xFF009AA7)
 private const val ACCENT_INT = 0xFF009AA7.toInt()
@@ -389,7 +391,9 @@ private fun TopControls(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 2.dp,
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier
+                .size(64.dp)
+                .testTag("btn-filtros")
         ) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
