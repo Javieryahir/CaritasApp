@@ -59,7 +59,7 @@ fun LoginScreen(navController: NavController) {
 
         // Subtítulo
         Text(
-            text = "Crea/Ingresa con el siguiente botón",
+            text = "Ingresa con el siguiente botón",
             fontSize = 20.sp,
             modifier = Modifier.padding(bottom = 12.dp)
         )
