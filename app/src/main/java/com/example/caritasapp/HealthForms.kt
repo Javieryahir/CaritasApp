@@ -64,7 +64,7 @@ fun HealthFormsScreen() {
         Button(
             onClick = { /* TODO */ },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2D9CDB),
+                containerColor = Color(0xFF4A98A6),
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(50),
@@ -115,7 +115,7 @@ fun ToggleableField(label: String) {
             },
             modifier = Modifier
                 .weight(1f)
-                .background(Color(0xFFB3E5FC), RoundedCornerShape(8.dp))
+                .background(Color.LightGray, RoundedCornerShape(8.dp))
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -125,7 +125,7 @@ fun ToggleableField(label: String) {
             onClick = { isEnabled = !isEnabled }, // alterna
             modifier = Modifier
                 .size(40.dp)
-                .background(Color(0xFFB3E5FC), CircleShape)
+                .background(Color.LightGray, CircleShape)
         ) {
             if (isEnabled) {
                 Icon(Icons.Filled.Remove, contentDescription = "Desactivar")

@@ -78,6 +78,7 @@ fun ConfirmReservation() {
                 subtitle = "Jan 30 - Feb 24, 2025",
                 buttonText = "Cambiar",
                 icon = Icons.Filled.Edit
+
             )
 
             Divider(color = Color.LightGray, thickness = 1.dp)
@@ -87,7 +88,7 @@ fun ConfirmReservation() {
                 title = "Precio Lavanderia",
                 subtitle = "~$50 pesos",
                 buttonText = "Cambiar",
-                icon = Icons.Filled.Edit
+                icon = Icons.Filled.Edit,
             )
 
             Divider(color = Color.LightGray, thickness = 1.dp)
@@ -146,7 +147,7 @@ fun ConfirmReservation() {
         Button(
             onClick = { /* TODO: Confirmar */ },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2D9CDB),
+                containerColor = Color(0xFF4A98A6),
                 contentColor = Color.White
             ),
             shape = CircleShape,
@@ -159,7 +160,9 @@ fun ConfirmReservation() {
                 contentDescription = "Confirmar",
                 modifier = Modifier.padding(end = 8.dp)
             )
-            Text("Confirmar", fontSize = 25.sp, fontWeight = FontWeight.Medium)
+            Text("Confirmar",
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -185,7 +188,7 @@ fun InfoRow(
         Button(
             onClick = { /* TODO */ },
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2D9CDB),
+                containerColor = Color(0xFF4A98A6),
                 contentColor = Color.White
             ),
             shape = RoundedCornerShape(50),

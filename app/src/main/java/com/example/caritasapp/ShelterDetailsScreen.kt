@@ -111,7 +111,7 @@ fun ShelterDetailsScreen(navController: NavController) {
             Button(
                 onClick = { /* TODO: acción reservar */ },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2D9CDB),
+                    containerColor = Color(0xFF4A98A6),
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(50),
