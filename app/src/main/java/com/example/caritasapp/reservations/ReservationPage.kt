@@ -42,6 +42,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import com.example.caritasapp.navegationbar.AppBottomBar
 
 private val Accent = Color(0xFF009CA6)
 private const val ACCENT_INT = 0xFF009CA6.toInt()
@@ -254,10 +255,11 @@ fun ReservationPage(navController: NavController) {
             }
 
             // Barra de navegación inferior
-            BottomNavBar(
+            AppBottomBar(
+                navController = navController,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 8.dp)
+                    .padding(start = 12.dp, end = 12.dp, bottom = 28.dp) // 👈 sin colchón extra
             )
         }
 
@@ -545,38 +547,6 @@ private fun SelectionSheet(
             }
         }
     }
-}
-
-@Composable
-private fun BottomNavBar(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp),
-        shape = RoundedCornerShape(18.dp),
-        tonalElevation = 6.dp
-    ) {
-        NavigationBar(tonalElevation = 0.dp) {
-            NavItem(Icons.Outlined.Home, "Reservar", selected = true)
-            NavItem(Icons.AutoMirrored.Outlined.ListAlt, "Reservaciones")
-            NavItem(Icons.Outlined.DirectionsCar, "Transporte")
-            NavItem(Icons.Outlined.AccountCircle, "Cuenta")
-        }
-    }
-}
-
-@Composable
-private fun RowScope.NavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean = false
-) {
-    NavigationBarItem(
-        selected = selected,
-        onClick = { /* TODO navegar */ },
-        icon = { Icon(icon, contentDescription = label) },
-        label = { Text(label) }
-    )
 }
 
 private data class ServiceItem(val label: String, val iconRes: Int)
