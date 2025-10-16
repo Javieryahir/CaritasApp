@@ -7,24 +7,10 @@ import android.graphics.Rect
 import android.widget.DatePicker
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -32,27 +18,9 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,18 +39,12 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.CameraPositionState
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
-private val Accent = Color(0xFF009AA7)
-private const val ACCENT_INT = 0xFF009AA7.toInt()
+private val Accent = Color(0xFF009CA6)
+private const val ACCENT_INT = 0xFF009CA6.toInt()
 
 // ---------- Modelo ----------
 data class LocationData(
@@ -124,18 +87,17 @@ fun createTextMarker(text: String, selected: Boolean): BitmapDescriptor {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationPage(navController: NavController) {
+    var selectedServices by rememberSaveable { mutableStateOf(setOf<String>()) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Rango de fechas: inicio y fin
+    // Rango de fechas
     var startDate by remember { mutableStateOf<Calendar?>(null) }
     var endDate by remember { mutableStateOf<Calendar?>(null) }
 
-    // utilidad para formato dd/MM/yyyy
     fun format(c: Calendar?): String =
         if (c == null) "" else "${c.get(Calendar.DAY_OF_MONTH)}/${c.get(Calendar.MONTH) + 1}/${c.get(Calendar.YEAR)}"
 
-    // Abre 2 diálogos: primero INICIO, luego FIN (con min = inicio)
     fun pickDateRange() {
         val now = Calendar.getInstance()
         val startInit = (startDate ?: now)
@@ -148,7 +110,6 @@ fun ReservationPage(navController: NavController) {
                 }
                 startDate = start
 
-                // segundo diálogo: FIN
                 val endInit = (endDate ?: start)
                 DatePickerDialog(
                     context,
@@ -156,16 +117,13 @@ fun ReservationPage(navController: NavController) {
                         val end = Calendar.getInstance().apply {
                             set(y2, m2, d2, 0, 0, 0); set(Calendar.MILLISECOND, 0)
                         }
-                        // si el usuario elige antes del inicio, corrige al inicio
                         if (end.before(start)) end.timeInMillis = start.timeInMillis
                         endDate = end
                     },
                     endInit.get(Calendar.YEAR),
                     endInit.get(Calendar.MONTH),
                     endInit.get(Calendar.DAY_OF_MONTH)
-                ).apply {
-                    datePicker.minDate = start.timeInMillis
-                }.show()
+                ).apply { datePicker.minDate = start.timeInMillis }.show()
             },
             startInit.get(Calendar.YEAR),
             startInit.get(Calendar.MONTH),
@@ -173,17 +131,14 @@ fun ReservationPage(navController: NavController) {
         ).show()
     }
 
-// etiqueta que se muestra en el pill
     val dateLabel = if (startDate != null && endDate != null)
         "${format(startDate)} - ${format(endDate)}"
-    else
-        "Seleccionar Fechas"
+    else "Fechas"
 
-
-    // Estado: ubicación seleccionada (para el sheet)
+    // Estado: ubicación seleccionada
     var selectedLocation by remember { mutableStateOf<LocationData?>(null) }
 
-    // Datos de ejemplo
+    // Datos demo
     val locations = remember {
         listOf(
             LocationData(
@@ -217,7 +172,10 @@ fun ReservationPage(navController: NavController) {
     val scaffoldState = rememberBottomSheetScaffoldState()
     var showFilters by remember { mutableStateOf(false) }
     var showShelterPicker by remember { mutableStateOf(false) }
-    var selectedServices by rememberSaveable { mutableStateOf(setOf<String>()) }
+
+    // >>> Estado del diálogo de personas (movido acá porque el botón ahora está abajo)
+    var showPersonDialog by remember { mutableStateOf(false) }
+    var peopleCount by remember { mutableStateOf("1") }
 
     // --- UI ---
     BottomSheetScaffold(
@@ -260,29 +218,49 @@ fun ReservationPage(navController: NavController) {
                 }
             )
 
-            // Lista rápida de albergues debajo del chip
-            // Botón "Albergues" debajo del chip (abre el selector)
-            ShelterPickerButton(
+            // ===== Grupo de botones debajo del chip: Personas + Albergues =====
+            Row(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(
-                        top = paddingValues.calculateTopPadding() + 8.dp
-                    )
-                    .widthIn(min = 280.dp)
-                    .wrapContentWidth()
+                    .padding(top = paddingValues.calculateTopPadding() + 8.dp)
+                    .wrapContentWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                showShelterPicker = true
+                // Botón circular: Número de personas (izquierda)
+                Surface(
+                    onClick = { showPersonDialog = true },
+                    shape = CircleShape,
+                    color = Accent,
+                    tonalElevation = 3.dp,
+                    modifier = Modifier.size(60.dp)
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
+                            contentDescription = "Número de personas",
+                            tint = Color.White,
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
+
+                // Botón "Albergues Disponibles" (se adapta al espacio del Row)
+                ShelterPickerButton(
+                    modifier = Modifier.wrapContentWidth()
+                ) {
+                    showShelterPicker = true
+                }
             }
 
-
-
-            // Barra de navegación inferior (solo visual)
+            // Barra de navegación inferior
             BottomNavBar(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
             )
         }
+
         if (showFilters) {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ModalBottomSheet(
@@ -300,6 +278,8 @@ fun ReservationPage(navController: NavController) {
                 )
             }
         }
+
+
         if (showShelterPicker) {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ModalBottomSheet(
@@ -314,7 +294,8 @@ fun ReservationPage(navController: NavController) {
                         showShelterPicker = false
                         scope.launch {
                             cameraPositionState.animate(
-                                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(loc.latLng, 15f)
+                                com.google.android.gms.maps.CameraUpdateFactory
+                                    .newLatLngZoom(loc.latLng, 15f)
                             )
                         }
                     },
@@ -322,6 +303,68 @@ fun ReservationPage(navController: NavController) {
                 )
             }
         }
+
+        // Diálogo para editar cantidad de personas
+        if (showPersonDialog) {
+            AlertDialog(
+                onDismissRequest = { showPersonDialog = false },
+                confirmButton = {
+                    TextButton(onClick = { showPersonDialog = false }) {
+                        Text("Aceptar")
+                    }
+                },
+                title = {
+                    Text(
+                        "Número de personas",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Indica cuántas personas se registran contigo:",
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.Center,
+                            fontSize = 18.sp
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        OutlinedTextField(
+                            value = peopleCount,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() } && newValue.isNotEmpty()) {
+                                    peopleCount = newValue
+                                }
+                            },
+                            singleLine = true,
+                            // Sin label; solo el campo
+                            placeholder = {
+                                Text(
+                                    "1",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    textAlign = TextAlign.Center,
+                                    fontSize = 26.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            },
+                            textStyle = LocalTextStyle.current.copy(
+                                textAlign = TextAlign.Center,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.width(160.dp)
+                        )
+                    }
+                }
+            )
+        }
+
     }
 }
 
@@ -341,7 +384,6 @@ private fun TopControls(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Texto mostrado en el chip y tamaño adaptativo
         val dateText = selectedDate.ifBlank { "Seleccionar Fechas" }
         val fontSizeSp = when {
             dateText.length <= 20 -> 22.sp
@@ -350,11 +392,11 @@ private fun TopControls(
             else -> 16.sp
         }
 
-        // CHIP de fechas: contenido centrado
+        // CHIP de Fechas
         Surface(
             onClick = onPickDate,
             shape = RoundedCornerShape(32.dp),
-            color = MaterialTheme.colorScheme.surface,
+            color = Accent,
             tonalElevation = 2.dp,
             modifier = Modifier.weight(1f)
         ) {
@@ -368,26 +410,27 @@ private fun TopControls(
             ) {
                 Icon(
                     imageVector = Icons.Filled.CalendarMonth,
-                    contentDescription = "Seleccionar fechas",
+                    contentDescription = "Fechas",
+                    tint = Color.White,
                     modifier = Modifier.size(26.dp)
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = dateText,
+                    color = Color.White,
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = fontSizeSp),
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
-                    textAlign = TextAlign.Center,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    textAlign = TextAlign.Center
                 )
             }
         }
 
-        // Botón de filtros: tamaño ESTÁTICO
+        // Botón de Filtros (se mantiene en top bar)
         Surface(
             onClick = onFilterClick,
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
+            color = Accent,
             tonalElevation = 2.dp,
             modifier = Modifier.size(64.dp)
         ) {
@@ -395,6 +438,7 @@ private fun TopControls(
                 Icon(
                     imageVector = ImageVector.vectorResource(id = R.drawable.filter_list_24px),
                     contentDescription = "Filtros",
+                    tint = Color.White,
                     modifier = Modifier.size(40.dp)
                 )
             }
@@ -444,7 +488,6 @@ private fun SelectionSheet(
             .fillMaxWidth()
             .padding(bottom = 8.dp)
     ) {
-        // Imagen (placeholder)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -452,16 +495,14 @@ private fun SelectionSheet(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceVariant
-        ) { /* TODO: cargar imagen real con Coil */ }
+        ) {}
 
-        // Contenido centrado
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Nombre centrado
             Text(
                 text = location.name,
                 style = MaterialTheme.typography.headlineSmall,
@@ -472,7 +513,6 @@ private fun SelectionSheet(
 
             Spacer(Modifier.height(16.dp))
 
-            // Cupos
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = location.capacity.toString(),
@@ -489,20 +529,17 @@ private fun SelectionSheet(
 
             Spacer(Modifier.height(18.dp))
 
-            // Botón "Detalles" debajo de Cupos
             FilledTonalButton(
                 onClick = onDetailsClick,
                 shape = RoundedCornerShape(28.dp),
                 modifier = Modifier
                     .height(56.dp)
                     .widthIn(min = 200.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = 24.dp, vertical = 10.dp
-                )
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
             ) {
                 Text(
                     "Detalles",
-                    style = MaterialTheme.typography.titleLarge, // ~22sp por defecto
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -551,7 +588,6 @@ private fun ServiceFilterSheet(
     onClose: () -> Unit
 ) {
     val accent = Color(0xFF009AA7)
-
     val services = listOf(
         ServiceItem("Desayuno",   R.drawable.breakfast_dining_24px),
         ServiceItem("Comida",     R.drawable.meal_lunch_24px),
@@ -568,24 +604,13 @@ private fun ServiceFilterSheet(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Filtros",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = onClose) {
-                Text(
-                    "Cerrar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text("Filtros", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onClose) { Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
         }
 
         Spacer(Modifier.height(8.dp))
@@ -623,7 +648,7 @@ private fun ServiceCard(
     val shape = RoundedCornerShape(16.dp)
     val borderColor = if (selected) accent else MaterialTheme.colorScheme.outlineVariant
     val iconTint = if (selected) accent else MaterialTheme.colorScheme.onSurface
-    val containerColor = MaterialTheme.colorScheme.surfaceVariant
+    val containerColor = if (selected) accent.copy(alpha = 0.50f) else MaterialTheme.colorScheme.surfaceVariant
 
     Surface(
         onClick = onClick,
@@ -633,18 +658,12 @@ private fun ServiceCard(
     ) {
         Column(
             modifier = Modifier
-                .width(140.dp)          // ancho de la tarjeta
+                .width(140.dp)
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = containerColor
-            ) {
-                Box(
-                    modifier = Modifier.size(96.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+            Surface(shape = RoundedCornerShape(18.dp), color = containerColor) {
+                Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = ImageVector.vectorResource(id = item.iconRes),
                         contentDescription = item.label,
@@ -656,10 +675,7 @@ private fun ServiceCard(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 18.sp,
-                    lineHeight = 22.sp
-                ),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 22.sp),
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2
@@ -676,28 +692,29 @@ private fun ShelterPickerButton(
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface,
+        color = Accent,
         tonalElevation = 3.dp,
-        border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.5.dp, Accent),
         modifier = modifier
+            .height(60.dp)
+            .wrapContentWidth()
     ) {
         Row(
-            modifier = Modifier
-                .height(60.dp)
-                .padding(horizontal = 18.dp)
-                .fillMaxWidth(),
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Filled.LocationOn,
                 contentDescription = null,
+                tint = Color.White,
                 modifier = Modifier.size(26.dp)
             )
             Spacer(Modifier.width(10.dp))
             Text(
                 "Albergues Disponibles",
                 style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -721,18 +738,8 @@ private fun ShelterPickerSheet(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "Albergues",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            TextButton(onClick = onClose) {
-                Text(
-                    "Cerrar",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+            Text("Albergues", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onClose) { Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
         }
 
         Spacer(Modifier.height(8.dp))
