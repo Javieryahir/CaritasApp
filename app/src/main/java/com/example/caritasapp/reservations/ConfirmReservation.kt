@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledIconButton
@@ -50,8 +49,7 @@ private val CardStroke = Color(0x33000000)
 
 @Composable
 fun ConfirmReservation(
-    navController: NavController,
-    onClose: () -> Unit = {}
+    navController: NavController
 ) {
     // Intenta leer desde rutas conocidas del back stack
     val shelterHandle = remember(navController) {
@@ -78,7 +76,6 @@ fun ConfirmReservation(
     ConfirmReservationContent(
         shelterName = shelterName,
         dateRange = dateRange,
-        onClose = onClose,
         onBack = { navController.popBackStack() },
         onConfirm = { navController.navigate("waiting") }
     )
@@ -90,7 +87,7 @@ fun ConfirmReservation(
 private fun ConfirmReservationContent(
     shelterName: String,
     dateRange: String,
-    onClose: () -> Unit,   // puedes dejarlo, ya no se usa
+    // puedes dejarlo, ya no se usa
     onBack: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -247,7 +244,6 @@ fun PreviewConfirmReservation() {
     ConfirmReservationContent(
         shelterName = "Divina Providencia",
         dateRange = "30/1/2025 - 24/2/2025",
-        onClose = {},
         onBack = {},
         onConfirm = {}
     )
