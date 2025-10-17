@@ -89,7 +89,7 @@ fun LoginScreen(navController: NavController) {
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded },
-                modifier = Modifier.width(140.dp)
+                modifier = Modifier.width(120.dp)
             ) {
                 OutlinedTextField(
                     value = "${selectedCountry.flag} ${selectedCountry.code}",
@@ -104,7 +104,7 @@ fun LoginScreen(navController: NavController) {
                     },
                     singleLine = true,
                     textStyle = LocalTextStyle.current.copy(
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         textAlign = TextAlign.Center
                     ),
                     shape = RoundedCornerShape(50),

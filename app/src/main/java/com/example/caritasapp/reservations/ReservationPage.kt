@@ -29,6 +29,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
@@ -229,6 +232,7 @@ fun ReservationPage(navController: NavController) {
         sheetContent = {
             SelectionSheet(
                 location = selectedLocation,
+                isReservationEnabled = startDate != null && endDate != null && peopleCount.isNotEmpty() && peopleCount.toIntOrNull() != null && peopleCount.toInt() > 0,
                 onDetailsClick = {
                     // Guarda los datos del shelter seleccionado y navega
                     selectedLocation?.let { loc ->
@@ -290,12 +294,22 @@ fun ReservationPage(navController: NavController) {
                     modifier = Modifier.size(60.dp)
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
-                            contentDescription = "Número de personas",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
+                        val peopleCountInt = peopleCount.toIntOrNull() ?: 1
+                        if (peopleCountInt > 1) {
+                            Text(
+                                text = peopleCountInt.toString(),
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
+                                contentDescription = "Número de personas",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
                 }
 
@@ -363,9 +377,39 @@ fun ReservationPage(navController: NavController) {
         if (showPersonDialog) {
             AlertDialog(
                 onDismissRequest = { showPersonDialog = false },
-                confirmButton = {
+                dismissButton = {
                     TextButton(onClick = { showPersonDialog = false }) {
-                        Text("Aceptar")
+                        Text(
+                            "Cancelar",
+                            color = Accent,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                confirmButton = {
+                    FilledTonalButton(
+                        onClick = { showPersonDialog = false },
+                        shape = RoundedCornerShape(26.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Accent,
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "Aceptar",
+                                tint = Color.White
+                            )
+                            Text(
+                                "Aceptar",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 },
                 title = {
@@ -389,36 +433,88 @@ fun ReservationPage(navController: NavController) {
                             fontSize = 18.sp
                         )
                         Spacer(Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = peopleCount,
-                            onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() } && newValue.isNotEmpty()) {
-                                    peopleCount = newValue
-                                    // 👇 guarda el valor en el back stack de "search"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Botón restar
+                            Surface(
+                                onClick = {
+                                    val current = peopleCount.toIntOrNull() ?: 1
+                                    val updated = if (current > 1) current - 1 else 1
+                                    peopleCount = updated.toString()
                                     navController.currentBackStackEntry
                                         ?.savedStateHandle
-                                        ?.set("peopleCount", newValue)
+                                        ?.set("peopleCount", peopleCount)
+                                },
+                                shape = CircleShape,
+                                color = Accent,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Remove,
+                                        contentDescription = "Disminuir",
+                                        tint = Color.White
+                                    )
                                 }
-                            },
-                            singleLine = true,
-                            // Sin label; solo el campo
-                            placeholder = {
-                                Text(
-                                    "1",
-                                    modifier = Modifier.fillMaxWidth(),
+                            }
+
+                            OutlinedTextField(
+                                value = peopleCount,
+                                onValueChange = { newValue ->
+                                    if (newValue.all { it.isDigit() }) {
+                                        val sanitized = if (newValue.isBlank()) "" else newValue.trimStart('0').ifBlank { "1" }
+                                        peopleCount = sanitized
+                                        navController.currentBackStackEntry
+                                            ?.savedStateHandle
+                                            ?.set("peopleCount", peopleCount)
+                                    }
+                                },
+                                singleLine = true,
+                                placeholder = {
+                                    Text(
+                                        "1",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 26.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                },
+                                textStyle = LocalTextStyle.current.copy(
                                     textAlign = TextAlign.Center,
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.SemiBold
-                                )
-                            },
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.Center,
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.width(160.dp)
-                        )
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(120.dp)
+                            )
+
+                            // Botón sumar
+                            Surface(
+                                onClick = {
+                                    val current = peopleCount.toIntOrNull() ?: 1
+                                    val updated = current + 1
+                                    peopleCount = updated.toString()
+                                    navController.currentBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("peopleCount", peopleCount)
+                                },
+                                shape = CircleShape,
+                                color = Accent,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "Aumentar",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             )
@@ -538,7 +634,8 @@ private fun ShelterMap(
 @Composable
 private fun SelectionSheet(
     location: LocationData?,
-    onDetailsClick: () -> Unit
+    onDetailsClick: () -> Unit,
+    isReservationEnabled: Boolean = false
 ) {
     if (location == null) return
 
@@ -590,17 +687,34 @@ private fun SelectionSheet(
 
             FilledTonalButton(
                 onClick = onDetailsClick,
+                enabled = isReservationEnabled,
                 shape = RoundedCornerShape(28.dp),
                 modifier = Modifier
                     .height(56.dp)
                     .widthIn(min = 200.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    "Detalles",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp),
+                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (isReservationEnabled) Accent else MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = if (isReservationEnabled) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarMonth,
+                        contentDescription = "Hacer reservación",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Hacer Reservación",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
+                }
             }
         }
     }
@@ -623,6 +737,7 @@ private fun ServiceFilterSheet(
         ServiceItem("Duchas",     R.drawable.shower_24px),
         ServiceItem("Psicólogo",  R.drawable.neurology_24px),
         ServiceItem("Chequeo Dental", R.drawable.dentistry_24px),
+        ServiceItem("Expedición de oficios (actas de nacimiento, certificados médicos, etc.)", R.drawable.document_certificate_24px),
     )
 
     Column(

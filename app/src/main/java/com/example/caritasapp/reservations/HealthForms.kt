@@ -16,27 +16,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+ 
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.caritasapp.composables.HyperlinkText
 
-private val Teal = Color(0xFF5D97A3)
+private val Accent = Color(0xFF009CA6)
 
 @Composable
 fun HealthFormsScreen(navController: NavController, count: Int) {
-    val names         = remember(count) { MutableList(count) { "" } }
-    val allergiesList = remember(count) { MutableList(count) { "" } }
-    val disabilities  = remember(count) { MutableList(count) { "" } }
-    val medsList      = remember(count) { MutableList(count) { "" } }
+    val names         = remember(count) { MutableList(count) { mutableStateOf("") } }
+    val ages          = remember(count) { MutableList(count) { mutableStateOf("") } }
+    val allergiesList = remember(count) { MutableList(count) { mutableStateOf("") } }
+    val disabilities  = remember(count) { MutableList(count) { mutableStateOf("") } }
+    val medsList      = remember(count) { MutableList(count) { mutableStateOf("") } }
 
     val scroll = rememberScrollState()
+
+    // Validación global
+    val areNamesValid = names.all { it.value.isNotBlank() }
+    val areAgesValid = ages.all { state ->
+        val n = state.value.toIntOrNull()
+            n != null && n in 1..120
+    }
+    val isFormValid = areNamesValid && areAgesValid
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Teal)
+            .background(Accent)
             .padding(horizontal = 28.dp, vertical = 20.dp)
             .imePadding()
     ) {
@@ -74,14 +84,16 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                     PersonFormCard(
                         index = idx,
                         total = count,
-                        name = names[idx],
-                        onName = { names[idx] = it },
-                        allergies = allergiesList[idx],
-                        onAllergies = { allergiesList[idx] = it },
-                        disabilities = disabilities[idx],
-                        onDisabilities = { disabilities[idx] = it },
-                        meds = medsList[idx],
-                        onMeds = { medsList[idx] = it }
+                        name = names[idx].value,
+                        onName = { names[idx].value = it },
+                        age = ages[idx].value,
+                        onAge = { value -> if (value.all { ch -> ch.isDigit() } && value.length <= 3) ages[idx].value = value },
+                        allergies = allergiesList[idx].value,
+                        onAllergies = { allergiesList[idx].value = it },
+                        disabilities = disabilities[idx].value,
+                        onDisabilities = { disabilities[idx].value = it },
+                        meds = medsList[idx].value,
+                        onMeds = { medsList[idx].value = it }
                     )
                 }
 
@@ -121,7 +133,7 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
-                        tint = Teal,
+                        tint = Accent,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -131,21 +143,25 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                     shape = RoundedCornerShape(44.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor = Teal
+                        contentColor = Accent,
+                        disabledContainerColor = Color.White.copy(alpha = 0.7f),
+                        disabledContentColor = Accent.copy(alpha = 0.7f)
                     ),
                     contentPadding = PaddingValues(horizontal = 22.dp),
                     modifier = Modifier
                         .height(84.dp)
                         .weight(1f)
+                    ,
+                    enabled = isFormValid
                 ) {
                     Icon(
                         imageVector = Icons.Filled.CalendarToday,
                         contentDescription = "Reservación",
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(30.dp)
                             .padding(end = 12.dp)
                     )
-                    Text("Reservación", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Reservación", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -174,6 +190,8 @@ private fun PersonFormCard(
     total: Int,
     name: String,
     onName: (String) -> Unit,
+    age: String,
+    onAge: (String) -> Unit,
     allergies: String,
     onAllergies: (String) -> Unit,
     disabilities: String,
@@ -191,19 +209,48 @@ private fun PersonFormCard(
     )
 
     SectionLabel("Nombre")
-    CenteredField(value = name, onChange = onName, placeholder = "Nombre")
+    CenteredField(
+        value = name,
+        onChange = onName,
+        placeholder = "Nombre",
+        isError = false
+    )
+    Spacer(Modifier.height(18.dp))
+
+    SectionLabel("Edad")
+    CenteredField(
+        value = age,
+        onChange = onAge,
+        placeholder = "Edad",
+        isError = age.isNotBlank() && (age.toIntOrNull()?.let { it in 1..120 } != true)
+    )
     Spacer(Modifier.height(18.dp))
 
     SectionLabel("Listado de Alergias")
-    CenteredField(value = allergies, onChange = onAllergies, placeholder = "Alergia")
+    NoneOrField(
+        noneLabel = "Ninguna",
+        value = allergies,
+        onChange = onAllergies,
+        placeholder = "Alergia"
+    )
     Spacer(Modifier.height(18.dp))
 
     SectionLabel("Discapacidades")
-    CenteredField(value = disabilities, onChange = onDisabilities, placeholder = "Discapacidad")
+    NoneOrField(
+        noneLabel = "Ninguna",
+        value = disabilities,
+        onChange = onDisabilities,
+        placeholder = "Discapacidad"
+    )
     Spacer(Modifier.height(18.dp))
 
     SectionLabel("Medicamentos Actuales")
-    CenteredField(value = meds, onChange = onMeds, placeholder = "Medicamento")
+    NoneOrField(
+        noneLabel = "Ninguno",
+        value = meds,
+        onChange = onMeds,
+        placeholder = "Medicamento"
+    )
 }
 
 /* ---------- Helpers existentes ---------- */
@@ -225,18 +272,23 @@ private fun SectionLabel(text: String) {
 private fun CenteredField(
     value: String,
     onChange: (String) -> Unit,
-    placeholder: String
+    placeholder: String,
+    isError: Boolean = false,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onChange,
         singleLine = true,
+        isError = isError,
+        enabled = enabled,
         placeholder = {
             Text(
                 placeholder,
                 fontSize = 22.sp,
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
         textStyle = LocalTextStyle.current.copy(
@@ -248,9 +300,65 @@ private fun CenteredField(
             .fillMaxWidth()
             .heightIn(min = 64.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedContainerColor = Color.White,
             focusedContainerColor = Color.White,
-            cursorColor = Teal
+            unfocusedContainerColor = Color.White,
+            disabledContainerColor = Color.White.copy(alpha = 0.6f),
+            focusedBorderColor = Accent,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            cursorColor = Accent,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    )
+}
+
+@Composable
+private fun NoneOrField(
+    noneLabel: String,
+    value: String,
+    onChange: (String) -> Unit,
+    placeholder: String
+) {
+    var noneChecked by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Marca '" + noneLabel + "' si no aplica",
+            color = Color.White.copy(alpha = 0.9f),
+            fontSize = 14.sp
+        )
+
+        AssistChip(
+            onClick = {
+                noneChecked = !noneChecked
+                if (noneChecked) onChange("")
+            },
+            label = { Text(noneLabel) },
+            border = AssistChipDefaults.assistChipBorder(
+                enabled = true,
+                borderColor = if (noneChecked) Accent else MaterialTheme.colorScheme.outline
+            ),
+            colors = AssistChipDefaults.assistChipColors(
+                containerColor = if (noneChecked) Color.White else MaterialTheme.colorScheme.surface,
+                labelColor = if (noneChecked) Accent else MaterialTheme.colorScheme.onSurface
+            )
+        )
+    }
+
+    Spacer(Modifier.height(8.dp))
+
+    CenteredField(
+        value = if (noneChecked) "" else value,
+        onChange = { if (!noneChecked) onChange(it) },
+        placeholder = if (noneChecked) "No aplica" else placeholder,
+        isError = false,
+        enabled = !noneChecked
     )
 }

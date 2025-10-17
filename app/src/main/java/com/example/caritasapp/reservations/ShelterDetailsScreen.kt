@@ -164,26 +164,35 @@ fun ShelterDetailsScreen(navController: NavController) {
 
                 Spacer(Modifier.height(26.dp))
 
-                // Botón "Servicios disponibles"
-                Button(
+                // Botón "Servicios disponibles" (secundario / tonal)
+                FilledTonalButton(
                     onClick = { showServices = true },
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Accent,
-                        contentColor = Color.White
-                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
+                        .height(56.dp)
                 ) {
                     Text(
                         "Servicios disponibles",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
                 Spacer(Modifier.height(22.dp))
+
+                // Indicador de siguiente paso
+                Text(
+                    text = "Siguiente paso para reservar: Política de Salud",
+                    color = Accent,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp)
+                )
 
                 // Fila: "Política de Salud" + botón circular de atrás a la derecha
                 Row(
@@ -232,7 +241,7 @@ fun ShelterDetailsScreen(navController: NavController) {
                             contentDescription = "Política de Salud",
                             modifier = Modifier.padding(end = 12.dp)
                         )
-                        Text("Política de Salud", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Siguiente: Política de Salud", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

@@ -29,7 +29,7 @@ private data class BottomNavItem(
 
 private val bottomItems = listOf(
     BottomNavItem("search",       "Reservar",      Icons.Outlined.Home),
-    BottomNavItem("reservations", "Reservaciones", Icons.AutoMirrored.Outlined.ListAlt),
+    BottomNavItem("reservations", "Historial", Icons.AutoMirrored.Outlined.ListAlt),
     BottomNavItem("transport",    "Transporte",    Icons.Outlined.DirectionsCar),
     BottomNavItem("account",      "Cuenta",        Icons.Outlined.AccountCircle)
 )

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.core.content.edit
 
 class SessionManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("caritas_session", Context.MODE_PRIVATE)
@@ -11,7 +12,7 @@ class SessionManager(context: Context) {
     
     fun saveUser(user: UserData) {
         val userJson = json.encodeToString(user)
-        prefs.edit().putString("user", userJson).apply()
+        prefs.edit { putString("user", userJson) }
     }
     
     fun getUser(): UserData? {
@@ -24,7 +25,7 @@ class SessionManager(context: Context) {
     }
     
     fun saveToken(token: String) {
-        prefs.edit().putString("token", token).apply()
+        prefs.edit { putString("token", token) }
     }
     
     fun getToken(): String? {
@@ -32,11 +33,11 @@ class SessionManager(context: Context) {
     }
     
     fun saveTokens(idToken: String, accessToken: String, refreshToken: String) {
-        prefs.edit()
-            .putString("idToken", idToken)
-            .putString("accessToken", accessToken)
-            .putString("refreshToken", refreshToken)
-            .apply()
+        prefs.edit {
+            putString("idToken", idToken)
+                .putString("accessToken", accessToken)
+                .putString("refreshToken", refreshToken)
+        }
     }
     
     fun getIdToken(): String? {
@@ -56,7 +57,7 @@ class SessionManager(context: Context) {
     }
     
     fun logout() {
-        prefs.edit().clear().apply()
+        prefs.edit { clear() }
     }
 }
 
