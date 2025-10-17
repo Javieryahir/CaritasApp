@@ -45,6 +45,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,6 +79,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -89,8 +92,7 @@ data class LocationData(
     val latLng: LatLng,
     val details: String,
     val imageUrl: String? = null,
-    val capacity: Int = 4,
-    val distanceLabel: String = "1.2 miles"
+    val capacity: Int = 4
 )
 
 // ---------- Util: marcador con texto estilo "label" ----------
@@ -127,6 +129,9 @@ fun ReservationPage(navController: NavController) {
     var selectedServices by rememberSaveable { mutableStateOf(setOf<String>()) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val handle = navController.currentBackStackEntry?.savedStateHandle
+    val savedShelterName by (handle?.getStateFlow("shelter_name", "") ?: MutableStateFlow("")).collectAsState("")
+
 
     // Rango de fechas
     var startDate by remember { mutableStateOf<Calendar?>(null) }
@@ -178,9 +183,6 @@ fun ReservationPage(navController: NavController) {
         "${format(startDate)} - ${format(endDate)}"
     else "Fechas"
 
-    // Estado: ubicación seleccionada
-    var selectedLocation by remember { mutableStateOf<LocationData?>(null) }
-
     // Datos demo
     val locations = remember {
         listOf(
@@ -194,17 +196,21 @@ fun ReservationPage(navController: NavController) {
                 "Posada del Peregrino",
                 LatLng(25.68334790328978, -100.34546687358926),
                 "Opciones de estancia temporal y apoyo alimentario.",
-                capacity = 6,
-                distanceLabel = "2.4 miles"
+                capacity = 6
             ),
             LocationData(
                 "Alberge Contigo",
                 LatLng(25.791571000975924, -100.1387095558184),
                 "Centro con cupos limitados y registro diario.",
-                capacity = 3,
-                distanceLabel = "0.8 miles"
+                capacity = 3
             )
         )
+    }
+
+    // Estado: ubicación seleccionada
+    var selectedLocation by remember { mutableStateOf<LocationData?>(null) }
+    LaunchedEffect(savedShelterName) {
+        selectedLocation = locations.find { it.name == savedShelterName }
     }
 
     // Cámara
@@ -335,6 +341,7 @@ fun ReservationPage(navController: NavController) {
         }
 
 
+        // ...
         if (showShelterPicker) {
             val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ModalBottomSheet(
@@ -347,10 +354,17 @@ fun ReservationPage(navController: NavController) {
                     onSelect = { loc ->
                         selectedLocation = loc
                         showShelterPicker = false
+
+                        // 👇 Guarda todo en el savedStateHandle de "search"
+                        handle?.apply {
+                            set("shelter_name", loc.name)
+                            set("shelter_lat",  loc.latLng.latitude)
+                            set("shelter_lng",  loc.latLng.longitude)
+                        }
+
                         scope.launch {
                             cameraPositionState.animate(
-                                com.google.android.gms.maps.CameraUpdateFactory
-                                    .newLatLngZoom(loc.latLng, 15f)
+                                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(loc.latLng, 15f)
                             )
                         }
                     },
@@ -623,6 +637,8 @@ private fun ServiceFilterSheet(
         ServiceItem("Duchas",     R.drawable.shower_24px),
         ServiceItem("Psicólogo",  R.drawable.neurology_24px),
         ServiceItem("Chequeo Dental", R.drawable.dentistry_24px),
+        ServiceItem("Expedición de Oficios", R.drawable.article_24px),
+
     )
 
     Column(
@@ -805,11 +821,6 @@ private fun ShelterPickerSheet(
                                 color = if (isSelected) Accent else MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(2.dp))
-                            Text(
-                                text = loc.distanceLabel,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
                     }
                     Icon(
