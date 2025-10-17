@@ -9,6 +9,7 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.caritasapp.reservations.ConfirmReservation
 import com.example.caritasapp.reservations.ShelterDetailsScreen
 
 class MainActivity : ComponentActivity() {
@@ -31,15 +32,19 @@ fun MyApp() {
 
     NavHost(navController = navController, startDestination = "login") {
         composable("login")   { com.example.caritasapp.login.LoginScreen(navController) }
-
-        // Flujo de creación de cuenta
         composable("create1") { com.example.caritasapp.login.CreateAccountPt1(navController) }
         composable("create2") { com.example.caritasapp.login.CreateAccountPt2(navController) }
         composable("create3") { com.example.caritasapp.login.CreateAccountPt3(navController) }
-
-        // Ya la tienes:
         composable("search")  { com.example.caritasapp.reservations.ReservationPage(navController) }
         composable("shelter") { ShelterDetailsScreen(navController) }
+
+        // 👇 nueva firma con argumento
+        composable("health/{count}") { backStackEntry ->
+            val count = backStackEntry.arguments?.getString("count")?.toIntOrNull() ?: 1
+            com.example.caritasapp.reservations.HealthFormsScreen(navController, count)
+        }
+        composable("confirm") { ConfirmReservation(navController) }
+        composable("waiting") { com.example.caritasapp.reservations.WaitingPage(navController) }
     }
 }
 

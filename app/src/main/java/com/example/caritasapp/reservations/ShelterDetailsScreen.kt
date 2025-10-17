@@ -1,166 +1,311 @@
 package com.example.caritasapp.reservations
 
-import androidx.compose.foundation.BorderStroke
+import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.LocalLaundryService
-import androidx.compose.material.icons.filled.Shower
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.example.caritasapp.R
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
 
+private val Accent = Color(0xFF009CA6)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShelterDetailsScreen(navController: NavController) {
+    // Datos recibidos desde ReservationPage
+    val sh = navController.previousBackStackEntry?.savedStateHandle
+    val name  = sh?.get<String>("shelter_name") ?: "Nombre de Locación"
+    val addr  = sh?.get<String>("shelter_address") ?: "Dirección del lugar"
+    val lat   = sh?.get<Double>("shelter_lat") ?: 25.666
+    val lng   = sh?.get<Double>("shelter_lng") ?: -100.316
+    val latLng = LatLng(lat, lng)
+
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(latLng, 15f)
+    }
+
+    val context = LocalContext.current
+    val mapsUrl = "https://maps.google.com/?q=$lat,$lng"
+
+    // Sheet de servicios (solo lectura)
+    var showServices by remember { mutableStateOf(false) }
+    val services = remember {
+        listOf(
+            Service("Desayuno", "$15"),
+            Service("Comida", "$15"),
+            Service("Cena", "$10"),
+            Service("Lavadoras", "$10"),
+            Service("Duchas", "$10"),
+            Service("Traslados", "$20"),
+            Service("Hospedaje Diario", "$30"),
+            Service("Psicólogo", "Gratis"),
+            Service("Dentista", "Gratis"),
+            Service("Expedición de oficios", "$5"),
+        )
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize(), // <- sin statusBarsPadding: la imagen vuelve a quedar detrás de la barra de estado
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Imagen principal
+        // Imagen superior (se ve detrás de wifi/batería)
         Image(
-            painter = painterResource(id = R.drawable.shelter), // tu foto del albergue
-            contentDescription = "Imagen del Shelter",
+            painter = painterResource(id = R.drawable.shelter),
+            contentDescription = "Imagen del albergue",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .height(240.dp)
         )
 
-        // Contenedor blanco con esquinas redondeadas
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    color = Color.White,
-                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                )
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        // Contenedor principal
+        Surface(
+            color = Color.White,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            tonalElevation = 6.dp,
+            modifier = Modifier.fillMaxSize()
         ) {
-            // Título
-            Text(
-                text = "Nombre de Locacion",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-
-            // Dirección
-            Text(
-                text = "📍 Dirección del lugar",
-                fontSize = 14.sp,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
-                textAlign = TextAlign.Center
-            )
-
-            // Mapa
-            GoogleMap(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-                    .padding(bottom = 24.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 18.dp)
+                    .padding(bottom = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Marker(
-                    title = "Ubicación",
-                    snippet = "Mapa dentro de la tarjeta"
+                // Título + dirección (sin icono)
+                Text(
+                    text = name,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = addr,
+                    color = Color.Gray,
+                    fontSize = 20.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // Mapa
+                GoogleMap(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    cameraPositionState = cameraPositionState,
+                    uiSettings = MapUiSettings(
+                        zoomControlsEnabled = false,
+                        myLocationButtonEnabled = false,
+                        compassEnabled = false
+                    ),
+                    properties = MapProperties(isMyLocationEnabled = false)
+                ) {
+                    Marker(state = MarkerState(latLng), title = name)
+                }
+
+                Spacer(Modifier.height(14.dp))
+
+                // Link a Google Maps
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .clickable {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, mapsUrl.toUri())
+                            )
+                        }
+                ) {
+                    Icon(Icons.Filled.Link, contentDescription = null, tint = Accent)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Abrir en Google Maps",
+                        color = Accent,
+                        fontSize = 20.sp,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+
+                Spacer(Modifier.height(26.dp))
+
+                // Botón "Servicios disponibles"
+                Button(
+                    onClick = { showServices = true },
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Accent,
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                ) {
+                    Text(
+                        "Servicios disponibles",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Spacer(Modifier.height(22.dp))
+
+                // Fila: "Política de Salud" + botón circular de atrás a la derecha
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 1) Botón circular de atrás (izquierda)
+                    FilledIconButton(
+                        onClick = { navController.popBackStack() },
+                        shape = CircleShape,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = Accent,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.size(64.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Atrás"
+                        )
+                    }
+
+                    // 2) Botón "Política de Salud" (ocupa el resto)
+                    Button(
+                        onClick = { // dentro del onClick del botón "Política de Salud"
+                            val count = navController
+                                .getBackStackEntry("search")
+                                .savedStateHandle
+                                .get<String>("peopleCount")
+                                ?.toIntOrNull() ?: 1
+
+                            navController.navigate("health/$count")
+                        },
+                        shape = RoundedCornerShape(28.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Accent,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MedicalServices,
+                            contentDescription = "Política de Salud",
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                        Text("Política de Salud", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
-            // Sección de servicios
-            Text(
-                text = "Añadir Servicios",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp),
-                textAlign = TextAlign.Center
+        }
+    }
+
+    // ===== Sheet con la lista de servicios =====
+    if (showServices) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showServices = false },
+            sheetState = sheetState
+        ) {
+            ServicesSheetContent(
+                items = services,
+                onClose = { showServices = false }
             )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                SelectableServiceItem(icon = Icons.Filled.Shower, label = "Regaderas")
-                SelectableServiceItem(icon = Icons.Filled.LocalLaundryService, label = "Lavandería")
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Botón Reservar
-            Button(
-                onClick = { /* TODO: acción reservar */ },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2D9CDB),
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(50),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CalendarToday,
-                    contentDescription = "Reservar",
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Text("Reservar", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            }
         }
     }
 }
 
-@Composable
-fun SelectableServiceItem(icon: ImageVector, label: String) {
-    var isSelected by remember { mutableStateOf(false) }
+/* ===== Auxiliares ===== */
 
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) BorderStroke(2.dp, Color.Black) else null,
+private data class Service(val name: String, val price: String)
+
+@Composable
+private fun ServicesSheetContent(
+    items: List<Service>,
+    onClose: () -> Unit
+) {
+    Column(
         modifier = Modifier
-            .size(90.dp)
-            .clickable { isSelected = !isSelected }, // Toggle selección
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                modifier = Modifier.size(32.dp),
-                tint = Color(0xFF2D9CDB)
+            Text(
+                "Servicios disponibles",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(text = label, fontSize = 13.sp)
+            TextButton(onClick = onClose) {
+                Text("Cerrar", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
+
+        Spacer(Modifier.height(10.dp))
+
+        items.forEachIndexed { index, s ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(s.name, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    s.price,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (s.price.equals("Gratis", true)) Accent
+                    else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (index != items.lastIndex) {
+                HorizontalDivider()
+            }
+        }
+        Spacer(Modifier.height(8.dp))
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewShelterDetails() {
-
 }
