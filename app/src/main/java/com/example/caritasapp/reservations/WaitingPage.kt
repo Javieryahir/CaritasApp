@@ -37,8 +37,8 @@ fun WaitingPage(navController: NavController) {   // 👈 ahora recibe NavContro
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Su reserva está siendo\nrevisada",
-            fontSize = 30.sp,
+            text = "Su reserva está siendo revisada",
+            fontSize = 50.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center,
@@ -46,8 +46,8 @@ fun WaitingPage(navController: NavController) {   // 👈 ahora recibe NavContro
         )
 
         Text(
-            text = "Manténgase al pendiente de su confirmación en\nla pestaña de Reservaciones",
-            fontSize = 20.sp,
+            text = "Manténgase al pendiente de su confirmación",
+            fontSize = 35.sp,
             color = Color.White,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 32.dp)

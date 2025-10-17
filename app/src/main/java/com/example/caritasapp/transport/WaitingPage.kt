@@ -51,7 +51,7 @@ fun WaitingPage(
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Manténgase al pendiente de su confirmación en\nla pestaña de Reservaciones",
+            text = "Manténgase al pendiente de su confirmación",
             fontSize = 20.sp,
             color = Color.White,
             textAlign = TextAlign.Center
