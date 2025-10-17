@@ -1,4 +1,4 @@
-package com.example.caritasapp.reservations
+package com.example.caritasapp.reserve
 
 import android.content.Intent
 import androidx.compose.foundation.Image

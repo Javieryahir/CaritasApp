@@ -1,838 +1,199 @@
+// ReservationPage.kt
 package com.example.caritasapp.reservations
 
-import android.app.DatePickerDialog
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Rect
-import android.widget.DatePicker
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.createBitmap
 import androidx.navigation.NavController
-import com.example.caritasapp.R
 import com.example.caritasapp.navegationbar.AppBottomBar
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.CameraPositionState
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
-import java.util.Calendar
 
-private val Accent = Color(0xFF009CA6)
-private const val ACCENT_INT = 0xFF009CA6.toInt()
+private val Teal   = Color(0xFF5D97A3)
+private val ChipBg = Color(0xFF69A7B2)
 
-// ---------- Modelo ----------
-data class LocationData(
-    val name: String,
-    val latLng: LatLng,
-    val details: String,
-    val imageUrl: String? = null,
-    val capacity: Int = 4
-)
+// ==== Tipografías (ajustables) ====
+private val TitleSize         = 36.sp   // "Reservaciones"
+private val SectionTitleSize  = 22.sp   // "Última reservación", "Pasadas reservaciones"
+private val ItemTitleSize     = 20.sp   // Título de cada item
+private val ItemMetaSize      = 18.sp   // Fechas y precio
+private val ChipTextSize      = 18.sp   // Texto de "Reagendar"
 
-// ---------- Util: marcador con texto estilo "label" ----------
-fun createTextMarker(text: String, selected: Boolean): BitmapDescriptor {
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (selected) android.graphics.Color.WHITE else android.graphics.Color.BLACK
-        textSize = 38f
-        textAlign = Paint.Align.LEFT
-    }
-    val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (selected) ACCENT_INT else android.graphics.Color.WHITE
-    }
-
-    val bounds = Rect()
-    textPaint.getTextBounds(text, 0, text.length, bounds)
-
-    val horizontal = 28
-    val vertical = 20
-    val width = bounds.width() + horizontal * 2
-    val height = bounds.height() + vertical * 2
-    val radius = 36f
-
-    val bmp = createBitmap(width, height)
-    val canvas = Canvas(bmp)
-    canvas.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), radius, radius, bgPaint)
-    canvas.drawText(text, horizontal.toFloat(), bounds.height() + vertical.toFloat(), textPaint)
-    return BitmapDescriptorFactory.fromBitmap(bmp)
-}
-
-// ---------- Pantalla principal ----------
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReservationPage(navController: NavController) {
-    var selectedServices by rememberSaveable { mutableStateOf(setOf<String>()) }
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val handle = navController.currentBackStackEntry?.savedStateHandle
-    val savedShelterName by (handle?.getStateFlow("shelter_name", "") ?: MutableStateFlow("")).collectAsState("")
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White)
+    ) {
+        val bottomBarPadding = 110.dp
 
-
-    // Rango de fechas
-    var startDate by remember { mutableStateOf<Calendar?>(null) }
-    var endDate by remember { mutableStateOf<Calendar?>(null) }
-
-    fun format(c: Calendar?): String =
-        if (c == null) "" else "${c.get(Calendar.DAY_OF_MONTH)}/${c.get(Calendar.MONTH) + 1}/${c.get(Calendar.YEAR)}"
-
-    fun pickDateRange() {
-        val now = Calendar.getInstance()
-        val startInit = (startDate ?: now)
-
-        DatePickerDialog(
-            context,
-            { _: DatePicker, y: Int, m: Int, d: Int ->
-                val start = Calendar.getInstance().apply {
-                    set(y, m, d, 0, 0, 0); set(Calendar.MILLISECOND, 0)
-                }
-                startDate = start
-
-                val endInit = (endDate ?: start)
-                DatePickerDialog(
-                    context,
-                    { _: DatePicker, y2: Int, m2: Int, d2: Int ->
-                        val end = Calendar.getInstance().apply {
-                            set(y2, m2, d2, 0, 0, 0); set(Calendar.MILLISECOND, 0)
-                        }
-                        if (end.before(start)) end.timeInMillis = start.timeInMillis
-                        endDate = end
-
-                        // 👇 GUARDA el rango en el back stack de esta pantalla ("search")
-                        val label = "${format(start)} - ${format(end)}"
-                        navController.currentBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("date_range", label)
-                    },
-                    endInit.get(Calendar.YEAR),
-                    endInit.get(Calendar.MONTH),
-                    endInit.get(Calendar.DAY_OF_MONTH)
-                ).apply { datePicker.minDate = start.timeInMillis }.show()
-            },
-            startInit.get(Calendar.YEAR),
-            startInit.get(Calendar.MONTH),
-            startInit.get(Calendar.DAY_OF_MONTH)
-        ).show()
-    }
-
-    val dateLabel = if (startDate != null && endDate != null)
-        "${format(startDate)} - ${format(endDate)}"
-    else "Fechas"
-
-    // Datos demo
-    val locations = remember {
-        listOf(
-            LocationData(
-                "Divina Providencia",
-                LatLng(25.668394809524564, -100.30311761472923),
-                "Albergue con espacios comunes y atención matutina.",
-                capacity = 4
-            ),
-            LocationData(
-                "Posada del Peregrino",
-                LatLng(25.68334790328978, -100.34546687358926),
-                "Opciones de estancia temporal y apoyo alimentario.",
-                capacity = 6
-            ),
-            LocationData(
-                "Alberge Contigo",
-                LatLng(25.791571000975924, -100.1387095558184),
-                "Centro con cupos limitados y registro diario.",
-                capacity = 3
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp),
+            contentPadding = PaddingValues(
+                top = 28.dp,
+                bottom = bottomBarPadding
             )
+        ) {
+            // Título principal centrado
+            item {
+                Text(
+                    "Reservaciones",
+                    fontSize = TitleSize,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E1E1E),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 20.dp)
+                )
+            }
+
+            // Última reservación
+            item {
+                Text(
+                    "Última reservación",
+                    fontSize = SectionTitleSize,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF4C4C4C),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 14.dp)
+                )
+            }
+
+            // Última
+            item {
+                ReservationItem(
+                    title = "Albergue",
+                    dates = "12 oct - 14 oct 2025",
+                    price = "$0",
+                    onRebook = { navController.navigate("reservations_details") }
+                )
+                Spacer(Modifier.height(20.dp))
+            }
+
+            // Separador
+            item {
+                HorizontalDivider()
+                Spacer(Modifier.height(20.dp))
+            }
+
+            // Pasadas reservaciones
+            item {
+                Text(
+                    "Pasadas reservaciones",
+                    fontSize = SectionTitleSize,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF4C4C4C),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 14.dp)
+                )
+            }
+
+            // Lista de pasadas (mock)
+            val past = listOf(
+                Triple("Albergue",  "12 oct - 14 oct 2025", "$0"),
+                Triple("Albergue",  "12 oct",               "$50"),
+                Triple("Albergue",  "12 oct",               "$10"),
+                Triple("Albergue",  "12 oct",               "$10"),
+            )
+
+            items(past) { (title, dates, price) ->
+                ReservationItem(
+                    title = title,
+                    dates = dates,
+                    price = price,
+                    onRebook = { navController.navigate("reservations_details") }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+
+        // Bottom bar
+        AppBottomBar(
+            navController = navController,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(start = 12.dp, end = 12.dp, bottom = 20.dp)
         )
     }
+}
 
-    // Estado: ubicación seleccionada
-    var selectedLocation by remember { mutableStateOf<LocationData?>(null) }
-    LaunchedEffect(savedShelterName) {
-        selectedLocation = locations.find { it.name == savedShelterName }
-    }
-
-    // Cámara
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(locations.first().latLng, 13f)
-    }
-
-    val scaffoldState = rememberBottomSheetScaffoldState()
-    var showFilters by remember { mutableStateOf(false) }
-    var showShelterPicker by remember { mutableStateOf(false) }
-
-    // >>> Estado del diálogo de personas (movido acá porque el botón ahora está abajo)
-    var showPersonDialog by remember { mutableStateOf(false) }
-    var peopleCount by remember { mutableStateOf("1") }
-
-    // --- UI ---
-    BottomSheetScaffold(
-        scaffoldState = scaffoldState,
-        sheetPeekHeight = 0.dp,
-        sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        sheetDragHandle = { BottomSheetDefaults.DragHandle() },
-        sheetContent = {
-            SelectionSheet(
-                location = selectedLocation,
-                onDetailsClick = {
-                    // Guarda los datos del shelter seleccionado y navega
-                    selectedLocation?.let { loc ->
-                        navController.currentBackStackEntry?.savedStateHandle?.apply {
-                            set("shelter_name", loc.name)
-                            set("shelter_address", loc.details)
-                            set("shelter_lat", loc.latLng.latitude)
-                            set("shelter_lng", loc.latLng.longitude)
-                        }
-                        navController.navigate("shelter")
-                    }
-                }
-            )
-        },
-        topBar = {
+@Composable
+private fun ReservationItem(
+    title: String,
+    dates: String,
+    price: String,
+    onRebook: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        tonalElevation = 0.dp,
+        border = ButtonDefaults.outlinedButtonBorder(enabled = true),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // icono calendario
             Surface(
-                tonalElevation = 2.dp,
-                shadowElevation = 0.dp,
-                color = MaterialTheme.colorScheme.background
-            ) {
-                TopControls(
-                    selectedDate = dateLabel,
-                    onPickDate = { pickDateRange() },
-                    onFilterClick = { showFilters = true }
-                )
-            }
-        }
-    ) { paddingValues ->
-        Box(Modifier.fillMaxSize()) {
-            // Mapa
-            ShelterMap(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = paddingValues.calculateTopPadding()),
-                locations = locations,
-                cameraPositionState = cameraPositionState,
-                selectedLocation = selectedLocation,
-                onMarkerClick = { loc ->
-                    selectedLocation = loc
-                    scope.launch { scaffoldState.bottomSheetState.expand() }
-                }
-            )
-
-            // ===== Grupo de botones debajo del chip: Personas + Albergues =====
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = paddingValues.calculateTopPadding() + 8.dp)
-                    .wrapContentWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Botón circular: Número de personas (izquierda)
-                Surface(
-                    onClick = { showPersonDialog = true },
-                    shape = CircleShape,
-                    color = Accent,
-                    tonalElevation = 3.dp,
-                    modifier = Modifier.size(60.dp)
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
-                            contentDescription = "Número de personas",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
-                }
-
-                // Botón "Albergues Disponibles" (se adapta al espacio del Row)
-                ShelterPickerButton(
-                    modifier = Modifier.wrapContentWidth()
-                ) {
-                    showShelterPicker = true
-                }
-            }
-
-            // Barra de navegación inferior
-            AppBottomBar(
-                navController = navController,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(start = 12.dp, end = 12.dp, bottom = 28.dp) // 👈 sin colchón extra
-            )
-        }
-
-        if (showFilters) {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(
-                onDismissRequest = { showFilters = false },
-                sheetState = sheetState
-            ) {
-                ServiceFilterSheet(
-                    selected = selectedServices,
-                    onToggle = { label ->
-                        selectedServices =
-                            if (selectedServices.contains(label)) selectedServices - label
-                            else selectedServices + label
-                    },
-                    onClose = { showFilters = false }
-                )
-            }
-        }
-
-
-        // ...
-        if (showShelterPicker) {
-            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-            ModalBottomSheet(
-                onDismissRequest = { showShelterPicker = false },
-                sheetState = sheetState
-            ) {
-                ShelterPickerSheet(
-                    locations = locations,
-                    selected = selectedLocation,
-                    onSelect = { loc ->
-                        selectedLocation = loc
-                        showShelterPicker = false
-
-                        // 👇 Guarda todo en el savedStateHandle de "search"
-                        handle?.apply {
-                            set("shelter_name", loc.name)
-                            set("shelter_lat",  loc.latLng.latitude)
-                            set("shelter_lng",  loc.latLng.longitude)
-                        }
-
-                        scope.launch {
-                            cameraPositionState.animate(
-                                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(loc.latLng, 15f)
-                            )
-                        }
-                    },
-                    onClose = { showShelterPicker = false }
-                )
-            }
-        }
-
-        // Diálogo para editar cantidad de personas
-        if (showPersonDialog) {
-            AlertDialog(
-                onDismissRequest = { showPersonDialog = false },
-                confirmButton = {
-                    TextButton(onClick = { showPersonDialog = false }) {
-                        Text("Aceptar")
-                    }
-                },
-                title = {
-                    Text(
-                        "Número de personas",
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "Indica cuántas personas se registran contigo:",
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.Center,
-                            fontSize = 18.sp
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = peopleCount,
-                            onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() } && newValue.isNotEmpty()) {
-                                    peopleCount = newValue
-                                    // 👇 guarda el valor en el back stack de "search"
-                                    navController.currentBackStackEntry
-                                        ?.savedStateHandle
-                                        ?.set("peopleCount", newValue)
-                                }
-                            },
-                            singleLine = true,
-                            // Sin label; solo el campo
-                            placeholder = {
-                                Text(
-                                    "1",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center,
-                                    fontSize = 26.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            },
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.Center,
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.width(160.dp)
-                        )
-                    }
-                }
-            )
-        }
-
-    }
-}
-
-/* ========================= COMPONENTES ========================= */
-
-@Composable
-private fun TopControls(
-    selectedDate: String,
-    onPickDate: () -> Unit,
-    onFilterClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val dateText = selectedDate.ifBlank { "Seleccionar Fechas" }
-        val fontSizeSp = when {
-            dateText.length <= 20 -> 22.sp
-            dateText.length <= 26 -> 20.sp
-            dateText.length <= 32 -> 18.sp
-            else -> 16.sp
-        }
-
-        // CHIP de Fechas
-        Surface(
-            onClick = onPickDate,
-            shape = RoundedCornerShape(32.dp),
-            color = Accent,
-            tonalElevation = 2.dp,
-            modifier = Modifier.weight(1f)
-        ) {
-            Row(
-                modifier = Modifier
-                    .height(64.dp)
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CalendarMonth,
-                    contentDescription = "Fechas",
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = dateText,
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = fontSizeSp),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        // Botón de Filtros (se mantiene en top bar)
-        Surface(
-            onClick = onFilterClick,
-            shape = CircleShape,
-            color = Accent,
-            tonalElevation = 2.dp,
-            modifier = Modifier.size(64.dp)
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.filter_list_24px),
-                    contentDescription = "Filtros",
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ShelterMap(
-    modifier: Modifier = Modifier,
-    locations: List<LocationData>,
-    cameraPositionState: CameraPositionState,
-    selectedLocation: LocationData?,
-    onMarkerClick: (LocationData) -> Unit
-) {
-    GoogleMap(
-        modifier = modifier,
-        cameraPositionState = cameraPositionState,
-        uiSettings = MapUiSettings(
-            zoomControlsEnabled = false,
-            myLocationButtonEnabled = false,
-            compassEnabled = false
-        ),
-        properties = MapProperties(isMyLocationEnabled = false)
-    ) {
-        locations.forEach { location ->
-            val isSelected = selectedLocation?.name == location.name
-            Marker(
-                state = MarkerState(location.latLng),
-                title = location.name,
-                icon = createTextMarker(location.name, isSelected),
-                onClick = { onMarkerClick(location); true }
-            )
-        }
-    }
-}
-
-@Composable
-private fun SelectionSheet(
-    location: LocationData?,
-    onDetailsClick: () -> Unit
-) {
-    if (location == null) return
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
-        ) {}
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = location.name,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = location.capacity.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 40.sp),
-                    fontWeight = FontWeight.ExtraBold
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = "Cupos",
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp),
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(Modifier.height(18.dp))
-
-            FilledTonalButton(
-                onClick = onDetailsClick,
-                shape = RoundedCornerShape(28.dp),
-                modifier = Modifier
-                    .height(56.dp)
-                    .widthIn(min = 200.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    "Detalles",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
-}
-
-private data class ServiceItem(val label: String, val iconRes: Int)
-
-@Composable
-private fun ServiceFilterSheet(
-    selected: Set<String>,
-    onToggle: (String) -> Unit,
-    onClose: () -> Unit
-) {
-    val accent = Color(0xFF009AA7)
-    val services = listOf(
-        ServiceItem("Desayuno",   R.drawable.breakfast_dining_24px),
-        ServiceItem("Comida",     R.drawable.meal_lunch_24px),
-        ServiceItem("Cena",       R.drawable.meal_dinner_24px),
-        ServiceItem("Lavadoras",  R.drawable.local_laundry_service_24px),
-        ServiceItem("Duchas",     R.drawable.shower_24px),
-        ServiceItem("Psicólogo",  R.drawable.neurology_24px),
-        ServiceItem("Chequeo Dental", R.drawable.dentistry_24px),
-        ServiceItem("Expedición de Oficios", R.drawable.article_24px),
-
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Filtros", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            TextButton(onClick = onClose) { Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        services.chunked(2).forEach { row ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                row.forEach { s ->
-                    ServiceCard(
-                        item = s,
-                        selected = s.label in selected,
-                        accent = accent,
-                        onClick = { onToggle(s.label) }
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-    }
-}
-
-@Composable
-private fun ServiceCard(
-    item: ServiceItem,
-    selected: Boolean,
-    accent: Color,
-    onClick: () -> Unit
-) {
-    val shape = RoundedCornerShape(16.dp)
-    val borderColor = if (selected) accent else MaterialTheme.colorScheme.outlineVariant
-    val iconTint = if (selected) accent else MaterialTheme.colorScheme.onSurface
-    val containerColor = if (selected) accent.copy(alpha = 0.50f) else MaterialTheme.colorScheme.surfaceVariant
-
-    Surface(
-        onClick = onClick,
-        shape = shape,
-        tonalElevation = if (selected) 2.dp else 0.dp,
-        border = BorderStroke(2.dp, borderColor)
-    ) {
-        Column(
-            modifier = Modifier
-                .width(140.dp)
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(shape = RoundedCornerShape(18.dp), color = containerColor) {
-                Box(modifier = Modifier.size(96.dp), contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(id = item.iconRes),
-                        contentDescription = item.label,
-                        tint = iconTint,
-                        modifier = Modifier.size(56.dp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = item.label,
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp, lineHeight = 22.sp),
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
-                maxLines = 2
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShelterPickerButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(28.dp),
-        color = Accent,
-        tonalElevation = 3.dp,
-        border = BorderStroke(1.5.dp, Accent),
-        modifier = modifier
-            .height(60.dp)
-            .wrapContentWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.LocationOn,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(26.dp)
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "Albergues Disponibles",
-                style = MaterialTheme.typography.titleLarge,
+                shape = CircleShape,
                 color = Color.White,
-                fontWeight = FontWeight.SemiBold
+                tonalElevation = 1.dp,
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+            ) {
+                Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Filled.CalendarMonth,
+                        contentDescription = null,
+                        tint = Teal
+                    )
+                }
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold, fontSize = ItemTitleSize)
+                Text(dates, color = Color.Gray, fontSize = ItemMetaSize)
+                Text(price, color = Color.Gray, fontSize = ItemMetaSize)
+            }
+
+            AssistChip(
+                onClick = onRebook,
+                label = { Text("Reagendar", color = Color.White, fontSize = ChipTextSize) },
+                colors = AssistChipDefaults.assistChipColors(containerColor = ChipBg),
             )
         }
     }
 }
 
+@Preview(showBackground = true, showSystemUi = true, name = "ReservationPage")
 @Composable
-private fun ShelterPickerSheet(
-    locations: List<LocationData>,
-    selected: LocationData?,
-    onSelect: (LocationData) -> Unit,
-    onClose: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Albergues", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            TextButton(onClick = onClose) { Text("Cerrar", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        locations.forEach { loc ->
-            val isSelected = selected?.name == loc.name
-            Surface(
-                onClick = { onSelect(loc) },
-                shape = RoundedCornerShape(16.dp),
-                tonalElevation = if (isSelected) 2.dp else 0.dp,
-                border = BorderStroke(2.dp, if (isSelected) Accent else MaterialTheme.colorScheme.outlineVariant),
-                color = if (isSelected) Accent.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .heightIn(min = 56.dp)
-                        .padding(horizontal = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(10.dp)
-                                .background(if (isSelected) Accent else MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                        )
-                        Spacer(Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = loc.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                color = if (isSelected) Accent else MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(Modifier.height(2.dp))
-                        }
-                    }
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = null,
-                        tint = if (isSelected) Accent else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-    }
+fun PreviewReservationPage() {
+    ReservationPage(navController = androidx.navigation.compose.rememberNavController())
 }
