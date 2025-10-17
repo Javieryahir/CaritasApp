@@ -12,12 +12,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -38,16 +46,60 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.caritasapp.data.countryCodes
+import com.example.caritasapp.data.NetworkModule
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 
 private val Teal = Color(0xFF5D97A3)
+private const val HARDCODED_PASSWORD = "Password2000&"
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateAccountPt1(navController: NavController) {
+    val context = LocalContext.current
+    val authRepository = remember { NetworkModule.createAuthRepository(context) }
+    
     var firstName by remember { mutableStateOf("") }
     var lastName  by remember { mutableStateOf("") }
     var phone     by remember { mutableStateOf("") }
+    var selectedCountry by remember { mutableStateOf(countryCodes[0]) }
+    var expanded by remember { mutableStateOf(false) }
+    var isSigningUp by remember { mutableStateOf(false) }
+    
+    val isLoading by authRepository.isLoading.collectAsState()
+    val error by authRepository.error.collectAsState()
 
-    val canContinue = firstName.isNotBlank() && phone.length >= 8
+    val canContinue = firstName.isNotBlank() && phone.length >= 8 && !isLoading
+
+    // Handle signup API call
+    LaunchedEffect(isSigningUp) {
+        if (isSigningUp) {
+            val fullPhoneNumber = "${selectedCountry.code}${phone}"
+            val result = authRepository.signup(
+                phoneNumber = fullPhoneNumber,
+                password = HARDCODED_PASSWORD,
+                firstName = firstName.trim(),
+                lastName = lastName.trim()
+            )
+            
+            result.fold(
+                onSuccess = {
+                    // Navigate to confirmation screen
+                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                        "fullName", "${firstName.trim()} ${lastName.trim()}".trim()
+                    )
+                    navController.currentBackStackEntry?.savedStateHandle?.set("phone", fullPhoneNumber)
+                    navController.navigate("create2")
+                },
+                onFailure = {
+                    // Error is already handled by the repository
+                    isSigningUp = false
+                }
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -141,33 +193,102 @@ fun CreateAccountPt1(navController: NavController) {
             // Celular
             Text("Celular", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp)
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { if (it.all(Char::isDigit)) phone = it },
-                placeholder = {
-                    Text(
-                        "Celular",
-                        fontSize = 20.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+            
+            // Phone input with country code
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Country code dropdown
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.width(140.dp)
+                ) {
+                    OutlinedTextField(
+                        value = "${selectedCountry.flag} ${selectedCountry.code}",
+                        onValueChange = { },
+                        readOnly = true,
+                        trailingIcon = {
+                            Icon(
+                                Icons.Filled.ArrowDropDown,
+                                contentDescription = "Seleccionar país",
+                                tint = Teal
+                            )
+                        },
+                        singleLine = true,
+                        textStyle = LocalTextStyle.current.copy(
+                            fontSize = 18.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 64.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.White,
+                            focusedContainerColor = Color.White,
+                            cursorColor = Teal
+                        )
                     )
-                },
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(
-                    fontSize = 22.sp,
-                    textAlign = TextAlign.Center
-                ),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 64.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = Color.White,
-                    focusedContainerColor = Color.White,
-                    cursorColor = Teal
+                    
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        countryCodes.forEach { country ->
+                            DropdownMenuItem(
+                                text = { 
+                                    Text("${country.flag} ${country.code} ${country.name}")
+                                },
+                                onClick = {
+                                    selectedCountry = country
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                // Phone number input
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { if (it.all(Char::isDigit)) phone = it },
+                    placeholder = {
+                        Text(
+                            "Número",
+                            fontSize = 20.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(
+                        fontSize = 22.sp,
+                        textAlign = TextAlign.Center
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 64.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White,
+                        cursorColor = Teal
+                    )
                 )
-            )
-
+            }
+            
+            // Show error message if any
+            error?.let { errorMessage ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    errorMessage,
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             // Botones GRANDES, centrados y "pegados" al campo de celular
             Spacer(Modifier.height(16.dp))
@@ -185,11 +306,7 @@ fun CreateAccountPt1(navController: NavController) {
 
                 FilledIconButton(
                     onClick = {
-                        navController.currentBackStackEntry?.savedStateHandle?.set(
-                            "fullName", "${firstName.trim()} ${lastName.trim()}".trim()
-                        )
-                        navController.currentBackStackEntry?.savedStateHandle?.set("phone", phone)
-                        navController.navigate("create2")
+                        isSigningUp = true
                     },
                     enabled = canContinue,
                     shape = CircleShape,
@@ -198,7 +315,17 @@ fun CreateAccountPt1(navController: NavController) {
                         containerColor = Color.White,
                         disabledContainerColor = Color(0x33FFFFFF)
                     )
-                ) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Siguiente", tint = Teal, modifier = Modifier.size(40.dp)) }
+                ) { 
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Teal,
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Siguiente", tint = Teal, modifier = Modifier.size(40.dp))
+                    }
+                }
             }
         }
     }

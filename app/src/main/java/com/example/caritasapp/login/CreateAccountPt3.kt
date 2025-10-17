@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -27,6 +28,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,22 +37,56 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.caritasapp.data.NetworkModule
 
 private val Teal = Color(0xFF5D97A3)
 
 @Composable
 fun CreateAccountPt3(navController: NavController) {
+    val context = LocalContext.current
+    val authRepository = remember { NetworkModule.createAuthRepository(context) }
+    
     val prev = navController.previousBackStackEntry?.savedStateHandle
     val phone = prev?.get<String>("phone").orEmpty()
+    val fullName = prev?.get<String>("fullName").orEmpty()
 
     var code by remember { mutableStateOf("") }
+    var isConfirming by remember { mutableStateOf(false) }
+    
+    val isLoading by authRepository.isLoading.collectAsState()
+    val error by authRepository.error.collectAsState()
+    
     val canConfirm = code.length >= 4
+
+    // Handle signup confirmation API call
+    LaunchedEffect(isConfirming) {
+        if (isConfirming) {
+            val result = authRepository.confirmSignup(
+                phoneNumber = phone,
+                code = code
+            )
+            
+            result.fold(
+                onSuccess = {
+                    // Navigate to main app
+                    navController.navigate("search") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onFailure = {
+                    // Error is already handled by the repository
+                    isConfirming = false
+                }
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -116,6 +153,17 @@ fun CreateAccountPt3(navController: NavController) {
                 fontSize = 18.sp,
                 textAlign = TextAlign.Center
             )
+            
+            // Show error message if any
+            error?.let { errorMessage ->
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    errorMessage,
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             // Botones grandes, centrados y pegados al campo
             Spacer(Modifier.height(16.dp))
@@ -140,11 +188,9 @@ fun CreateAccountPt3(navController: NavController) {
 
                 FilledIconButton(
                     onClick = {
-                        navController.navigate("search") {
-                            popUpTo("login") { inclusive = true }
-                        }
+                        isConfirming = true
                     },
-                    enabled = canConfirm,
+                    enabled = canConfirm && !isLoading,
                     shape = CircleShape,
                     modifier = Modifier.size(84.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(
@@ -152,12 +198,20 @@ fun CreateAccountPt3(navController: NavController) {
                         disabledContainerColor = Color(0x33FFFFFF)
                     )
                 ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = "Confirmar",
-                        tint = Teal,
-                        modifier = Modifier.size(44.dp)
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp),
+                            color = Teal,
+                            strokeWidth = 3.dp
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Check,
+                            contentDescription = "Confirmar",
+                            tint = Teal,
+                            modifier = Modifier.size(44.dp)
+                        )
+                    }
                 }
             }
         }

@@ -20,11 +20,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Debe llevar paréntesis y comillas escapadas
-        // Si usas EMULADOR: http://10.0.2.2:8080/
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"")
-        // Si usas DISPOSITIVO FÍSICO: pon la IP de tu PC, ej:
-        // buildConfigField("String", "BASE_URL", "\"http://192.168.1.50:8080/\"")
+        // API endpoint for Caritas
+        buildConfigField("String", "BASE_URL", "\"https://api.caritas.automvid.store/\"")
     }
 
     buildTypes {
