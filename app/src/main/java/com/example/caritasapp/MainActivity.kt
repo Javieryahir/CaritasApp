@@ -9,6 +9,7 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.caritasapp.account.AccountScreen
 import com.example.caritasapp.reservations.ConfirmReservation
 import com.example.caritasapp.reservations.ShelterDetailsScreen
 import com.example.caritasapp.transport.TransportScreen
@@ -64,7 +65,7 @@ fun MyApp() {
                 time = time
             )
         }
-
+        composable("account") { AccountScreen(navController) }
     }
 }
 
