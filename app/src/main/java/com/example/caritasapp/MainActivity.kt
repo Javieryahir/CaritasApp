@@ -11,6 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.caritasapp.reservations.ConfirmReservation
 import com.example.caritasapp.reservations.ShelterDetailsScreen
+import com.example.caritasapp.transport.TransportScreen
+import com.example.caritasapp.transport.WaitingPage as WaitingTransportPage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +47,24 @@ fun MyApp() {
         }
         composable("confirm") { ConfirmReservation(navController) }
         composable("waiting") { com.example.caritasapp.reservations.WaitingPage(navController) }
+        composable("transport")  { TransportScreen(navController) }
+        composable(
+            route = "waiting_transport?pickup={pickup}&dropoff={dropoff}&date={date}&time={time}"
+        ) { backStackEntry ->
+            val pickup  = backStackEntry.arguments?.getString("pickup")  ?: ""
+            val dropoff = backStackEntry.arguments?.getString("dropoff") ?: ""
+            val date    = backStackEntry.arguments?.getString("date")    ?: ""
+            val time    = backStackEntry.arguments?.getString("time")    ?: ""
+
+            WaitingTransportPage(
+                navController = navController,
+                pickup = pickup,
+                dropoff = dropoff,
+                date = date,
+                time = time
+            )
+        }
+
     }
 }
 
