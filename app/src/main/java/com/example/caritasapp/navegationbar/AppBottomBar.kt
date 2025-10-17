@@ -56,15 +56,15 @@ fun AppBottomBar(navController: NavController, modifier: Modifier = Modifier) {
 
                 NavigationBarItem(
                     selected = selected,
+                    // AppBottomBar.kt  (dentro de NavigationBarItem(onClick = { ... }))
                     onClick = {
-                        val target = if (item.route == "search") "search" else "login"
+                        val target = item.route
                         if (current != target) {
                             navController.navigate(target) {
                                 launchSingleTop = true
-                                if (target == "search") {
-                                    restoreState = true
-                                    popUpTo("search") { saveState = true }
-                                }
+                                restoreState = true
+                                // 👇 Mantén "search" en el back stack para conservar su savedStateHandle
+                                popUpTo("search") { saveState = true }
                             }
                         }
                     },
