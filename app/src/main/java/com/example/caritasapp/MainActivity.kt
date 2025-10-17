@@ -1,6 +1,5 @@
 package com.example.caritasapp
 
-// 👇 importa la nueva pantalla
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,23 +8,24 @@ import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
+// ---------- Pantallas ----------
 import com.example.caritasapp.account.AccountScreen
-import com.example.caritasapp.reservations.ConfirmReservation
-import com.example.caritasapp.reservations.ShelterDetailsScreen
+import com.example.caritasapp.reserve.ConfirmReservation
+import com.example.caritasapp.reserve.ShelterDetailsScreen
 import com.example.caritasapp.transport.TransportScreen
 import com.example.caritasapp.transport.WaitingPage as WaitingTransportPage
+import com.example.caritasapp.reservations.DetailsScreen as ReservationsDetailsScreen
+
+// 👇 Alias para diferenciar “mapa” vs “lista”
+import com.example.caritasapp.reserve.ReservationPage as ReservePage          // MAPA/FILTROS (antes “ReservationPage”)
+import com.example.caritasapp.reservations.ReservationPage as ReservationsPage // LISTA/HISTORIAL nuevo
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 👇 Asegura que Android muestre la barra de estado y respete los márgenes del sistema
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        setContent {
-            MyApp()
-            //MaterialTheme {
-            //    com.example.caritasapp.debug.HostelsDebugScreen()
-            //}
-        }
+        setContent { MyApp() }
     }
 }
 
@@ -38,17 +38,25 @@ fun MyApp() {
         composable("create1") { com.example.caritasapp.login.CreateAccountPt1(navController) }
         composable("create2") { com.example.caritasapp.login.CreateAccountPt2(navController) }
         composable("create3") { com.example.caritasapp.login.CreateAccountPt3(navController) }
-        composable("search")  { com.example.caritasapp.reservations.ReservationPage(navController) }
-        composable("shelter") { ShelterDetailsScreen(navController) }
 
-        // 👇 nueva firma con argumento
+        // “search” = flujo de RESERVA (mapa/filtros, antes llamado ReservationPage)
+        composable("search")        { ReservePage(navController) }
+
+        // NUEVA pantalla de LISTA/HISTORIAL para el tab “Reservaciones”
+        composable("reservations")  { ReservationsPage(navController) }
+
+        composable("shelter")       { ShelterDetailsScreen(navController) }
+
         composable("health/{count}") { backStackEntry ->
             val count = backStackEntry.arguments?.getString("count")?.toIntOrNull() ?: 1
-            com.example.caritasapp.reservations.HealthFormsScreen(navController, count)
+            com.example.caritasapp.reserve.HealthFormsScreen(navController, count)
         }
-        composable("confirm") { ConfirmReservation(navController) }
-        composable("waiting") { com.example.caritasapp.reservations.WaitingPage(navController) }
-        composable("transport")  { TransportScreen(navController) }
+
+        composable("confirm")  { ConfirmReservation(navController) }
+        composable("waiting")  { com.example.caritasapp.reserve.WaitingPage(navController) }
+
+        composable("transport") { TransportScreen(navController) }
+
         composable(
             route = "waiting_transport?pickup={pickup}&dropoff={dropoff}&date={date}&time={time}"
         ) { backStackEntry ->
@@ -56,7 +64,6 @@ fun MyApp() {
             val dropoff = backStackEntry.arguments?.getString("dropoff") ?: ""
             val date    = backStackEntry.arguments?.getString("date")    ?: ""
             val time    = backStackEntry.arguments?.getString("time")    ?: ""
-
             WaitingTransportPage(
                 navController = navController,
                 pickup = pickup,
@@ -66,6 +73,7 @@ fun MyApp() {
             )
         }
         composable("account") { AccountScreen(navController) }
+        composable("reservations_details") { ReservationsDetailsScreen(navController) }
     }
 }
 

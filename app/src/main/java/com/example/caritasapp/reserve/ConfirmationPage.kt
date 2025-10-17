@@ -1,31 +1,16 @@
-package com.example.caritasapp.reservations
+package com.example.caritasapp.reserve
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,6 +29,8 @@ import com.example.caritasapp.R
 
 private val Teal = Color(0xFF5D97A3)
 private val CardStroke = Color(0x33000000)
+// 👉 color de fondo solicitado
+private val CardBg = Color(0xFFD1E0D7)
 
 /* -------------------- Composable de orquestación (con NavController) -------------------- */
 
@@ -51,7 +38,6 @@ private val CardStroke = Color(0x33000000)
 fun ConfirmReservation(
     navController: NavController
 ) {
-    // Intenta leer desde rutas conocidas del back stack
     val shelterHandle = remember(navController) {
         runCatching { navController.getBackStackEntry("shelter").savedStateHandle }.getOrNull()
     }
@@ -62,7 +48,6 @@ fun ConfirmReservation(
         runCatching { navController.getBackStackEntry("health").savedStateHandle }.getOrNull()
     }
 
-    // Priorizamos "shelter" y luego "search"/"health"
     val shelterName = shelterHandle?.get<String>("shelter_name")
         ?: searchHandle?.get<String>("shelter_name")
         ?: healthHandle?.get<String>("shelter_name")
@@ -87,7 +72,6 @@ fun ConfirmReservation(
 private fun ConfirmReservationContent(
     shelterName: String,
     dateRange: String,
-    // puedes dejarlo, ya no se usa
     onBack: () -> Unit,
     onConfirm: () -> Unit
 ) {
@@ -97,9 +81,6 @@ private fun ConfirmReservationContent(
             .statusBarsPadding()
             .padding(20.dp)
     ) {
-        // ✅ SIN botón de cerrar
-
-        // Contenido centrado
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -116,79 +97,86 @@ private fun ConfirmReservationContent(
 
             Spacer(Modifier.height(16.dp))
 
-            Column(
+            // ===== Tarjeta (form) con fondo #D1E0D7 =====
+            Surface(
+                color = CardBg,
+                shape = RoundedCornerShape(24.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(1.dp, CardStroke, RoundedCornerShape(24.dp))
-                    .padding(18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.shelter),
-                    contentDescription = "Locación",
-                    contentScale = ContentScale.Crop,
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.LightGray, RoundedCornerShape(16.dp))
-                )
+                        .padding(18.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.shelter),
+                        contentDescription = "Locación",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(140.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.LightGray, RoundedCornerShape(16.dp))
+                    )
 
-                Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(14.dp))
 
-                Text(
-                    text = shelterName,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 34.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Text(
+                        text = shelterName,
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        lineHeight = 34.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Spacer(Modifier.height(18.dp))
-                HorizontalDivider(thickness = 2.dp, color = Color(0xFFE5E5E5))
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(18.dp))
+                    HorizontalDivider(thickness = 2.dp, color = Color(0xFFE5E5E5))
+                    Spacer(Modifier.height(12.dp))
 
-                Text(
-                    "Fechas",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    dateRange,
-                    fontSize = 20.sp,
-                    color = Color(0xFF5F5F5F),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Text(
+                        "Fechas",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        dateRange,
+                        fontSize = 20.sp,
+                        color = Color(0xFF5F5F5F),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider(thickness = 2.dp, color = Color(0xFFE5E5E5))
-                Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(16.dp))
+                    HorizontalDivider(thickness = 2.dp, color = Color(0xFFE5E5E5))
+                    Spacer(Modifier.height(12.dp))
 
-                Text(
-                    "Total",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "~$100 Pesos",
-                    fontSize = 38.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                    Text(
+                        "Total",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "~$100 Pesos",
+                        fontSize = 38.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             Spacer(Modifier.height(18.dp))
 
-            // ✅ Botones: Atrás (teal con flecha blanca) + Confirmar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -199,14 +187,14 @@ private fun ConfirmReservationContent(
                     shape = CircleShape,
                     modifier = Modifier.size(84.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = Teal,   // mismo color que confirmar
+                        containerColor = Teal,
                         contentColor = Color.White
                     )
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
-                        tint = Color.White,      // flecha blanca
+                        tint = Color.White,
                         modifier = Modifier.size(40.dp)
                     )
                 }
@@ -236,7 +224,7 @@ private fun ConfirmReservationContent(
     }
 }
 
-/* -------------------- Preview con datos mock -------------------- */
+/* -------------------- Preview -------------------- */
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -248,4 +236,3 @@ fun PreviewConfirmReservation() {
         onConfirm = {}
     )
 }
-

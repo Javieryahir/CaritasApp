@@ -1,4 +1,4 @@
-package com.example.caritasapp.reservations
+package com.example.caritasapp.reserve
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
