@@ -102,8 +102,8 @@ fun CreateAccountPt2(navController: NavController) {
 
                 FilledIconButton(
                     onClick = {
-                        navController.currentBackStackEntry
-                            ?.savedStateHandle?.set("phone", phone)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("fullName", fullName)
+                        navController.currentBackStackEntry?.savedStateHandle?.set("phone", phone)
                         navController.navigate("create3")
                     },
                     shape = CircleShape,

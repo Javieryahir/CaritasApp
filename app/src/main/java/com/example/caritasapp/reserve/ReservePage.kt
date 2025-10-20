@@ -27,11 +27,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -57,17 +61,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.createBitmap
 import androidx.navigation.NavController
 import com.example.caritasapp.R
 import com.example.caritasapp.navegationbar.AppBottomBar
+import com.example.caritasapp.data.HostelData
+import com.example.caritasapp.data.NetworkModule
+import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -97,29 +109,34 @@ data class LocationData(
 
 // ---------- Util: marcador con texto estilo "label" ----------
 fun createTextMarker(text: String, selected: Boolean): BitmapDescriptor {
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (selected) android.graphics.Color.WHITE else android.graphics.Color.BLACK
-        textSize = 38f
-        textAlign = Paint.Align.LEFT
+    return try {
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (selected) android.graphics.Color.WHITE else android.graphics.Color.BLACK
+            textSize = 38f
+            textAlign = Paint.Align.LEFT
+        }
+        val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = if (selected) ACCENT_INT else android.graphics.Color.WHITE
+        }
+
+        val bounds = Rect()
+        textPaint.getTextBounds(text, 0, text.length, bounds)
+
+        val horizontal = 28
+        val vertical = 20
+        val width = bounds.width() + horizontal * 2
+        val height = bounds.height() + vertical * 2
+        val radius = 36f
+
+        val bmp = createBitmap(width, height)
+        val canvas = Canvas(bmp)
+        canvas.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), radius, radius, bgPaint)
+        canvas.drawText(text, horizontal.toFloat(), bounds.height() + vertical.toFloat(), textPaint)
+        BitmapDescriptorFactory.fromBitmap(bmp)
+    } catch (e: Exception) {
+        // Fallback to default marker if custom marker creation fails
+        BitmapDescriptorFactory.defaultMarker()
     }
-    val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = if (selected) ACCENT_INT else android.graphics.Color.WHITE
-    }
-
-    val bounds = Rect()
-    textPaint.getTextBounds(text, 0, text.length, bounds)
-
-    val horizontal = 28
-    val vertical = 20
-    val width = bounds.width() + horizontal * 2
-    val height = bounds.height() + vertical * 2
-    val radius = 36f
-
-    val bmp = createBitmap(width, height)
-    val canvas = Canvas(bmp)
-    canvas.drawRoundRect(0f, 0f, width.toFloat(), height.toFloat(), radius, radius, bgPaint)
-    canvas.drawText(text, horizontal.toFloat(), bounds.height() + vertical.toFloat(), textPaint)
-    return BitmapDescriptorFactory.fromBitmap(bmp)
 }
 
 // ---------- Pantalla principal ----------
@@ -129,13 +146,46 @@ fun ReservationPage(navController: NavController) {
     var selectedServices by rememberSaveable { mutableStateOf(setOf<String>()) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    // Repository for API calls
+    val reservationRepository = remember { NetworkModule.createReservationRepository(context) }
     val handle = navController.currentBackStackEntry?.savedStateHandle
     val savedShelterName by (handle?.getStateFlow("shelter_name", "") ?: MutableStateFlow("")).collectAsState("")
 
 
-    // Rango de fechas
-    var startDate by remember { mutableStateOf<Calendar?>(null) }
-    var endDate by remember { mutableStateOf<Calendar?>(null) }
+    // Rango de fechas - Initialize with default dates
+    var startDate by remember { mutableStateOf<Calendar?>(Calendar.getInstance().apply { 
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }) }
+    var endDate by remember { mutableStateOf<Calendar?>(Calendar.getInstance().apply { 
+        add(Calendar.DAY_OF_MONTH, 7) // 7 days from now
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }) }
+    
+    // Store initial dates in navigation state
+    LaunchedEffect(startDate, endDate) {
+        if (startDate != null && endDate != null) {
+            val startDateStr = "${startDate!!.get(Calendar.YEAR)}-${String.format("%02d", startDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", startDate!!.get(Calendar.DAY_OF_MONTH))}"
+            val endDateStr = "${endDate!!.get(Calendar.YEAR)}-${String.format("%02d", endDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", endDate!!.get(Calendar.DAY_OF_MONTH))}"
+            
+            println("🔍 ReservePage storing dates:")
+            println("  startDate: $startDateStr")
+            println("  endDate: $endDateStr")
+            
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set("startDate", startDateStr)
+            navController.currentBackStackEntry
+                ?.savedStateHandle
+                ?.set("endDate", endDateStr)
+        }
+    }
 
     fun format(c: Calendar?): String =
         if (c == null) "" else "${c.get(Calendar.DAY_OF_MONTH)}/${c.get(Calendar.MONTH) + 1}/${c.get(Calendar.YEAR)}"
@@ -167,6 +217,17 @@ fun ReservationPage(navController: NavController) {
                         navController.currentBackStackEntry
                             ?.savedStateHandle
                             ?.set("date_range", label)
+                        
+                        // Also store individual dates for API calls and confirmation
+                        val startDateStr = "${start.get(Calendar.YEAR)}-${String.format("%02d", start.get(Calendar.MONTH) + 1)}-${String.format("%02d", start.get(Calendar.DAY_OF_MONTH))}"
+                        val endDateStr = "${end.get(Calendar.YEAR)}-${String.format("%02d", end.get(Calendar.MONTH) + 1)}-${String.format("%02d", end.get(Calendar.DAY_OF_MONTH))}"
+                        
+                        navController.currentBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("startDate", startDateStr)
+                        navController.currentBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("endDate", endDateStr)
                     },
                     endInit.get(Calendar.YEAR),
                     endInit.get(Calendar.MONTH),
@@ -184,38 +245,100 @@ fun ReservationPage(navController: NavController) {
     else "Fechas"
 
     // Datos demo
-    val locations = remember {
-        listOf(
-            LocationData(
-                "Divina Providencia",
-                LatLng(25.668394809524564, -100.30311761472923),
-                "Albergue con espacios comunes y atención matutina.",
-                capacity = 4
-            ),
-            LocationData(
-                "Posada del Peregrino",
-                LatLng(25.68334790328978, -100.34546687358926),
-                "Opciones de estancia temporal y apoyo alimentario.",
-                capacity = 6
-            ),
-            LocationData(
-                "Alberge Contigo",
-                LatLng(25.791571000975924, -100.1387095558184),
-                "Centro con cupos limitados y registro diario.",
-                capacity = 3
-            )
+    var locations by remember { mutableStateOf(listOf(
+        LocationData(
+            "Divina Providencia",
+            LatLng(25.668394809524564, -100.30311761472923),
+            "Albergue con espacios comunes y atención matutina.",
+            capacity = 4
+        ),
+        LocationData(
+            "Posada del Peregrino",
+            LatLng(25.68334790328978, -100.34546687358926),
+            "Opciones de estancia temporal y apoyo alimentario.",
+            capacity = 6
+        ),
+        LocationData(
+            "Alberge Contigo",
+            LatLng(25.791571000975924, -100.1387095558184),
+            "Centro con cupos limitados y registro diario.",
+            capacity = 3
         )
-    }
+    )) }
 
     // Estado: ubicación seleccionada
     var selectedLocation by remember { mutableStateOf<LocationData?>(null) }
+    var selectedHostelData by remember { mutableStateOf<HostelData?>(null) }
+    var hostelsResponse by remember { mutableStateOf<List<HostelData>?>(null) }
     LaunchedEffect(savedShelterName) {
         selectedLocation = locations.find { it.name == savedShelterName }
     }
+    
+    // Fetch hostels when dates are selected
+    LaunchedEffect(startDate, endDate) {
+        try {
+            if (startDate != null && endDate != null) {
+                val startDateStr = "${startDate!!.get(Calendar.YEAR)}-${String.format("%02d", startDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", startDate!!.get(Calendar.DAY_OF_MONTH))}"
+                val endDateStr = "${endDate!!.get(Calendar.YEAR)}-${String.format("%02d", endDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", endDate!!.get(Calendar.DAY_OF_MONTH))}"
+                
+                scope.launch {
+                    try {
+                        reservationRepository.getHostels().collect { hostels ->
+                            hostels?.let { hostelsList ->
+                                hostelsResponse = hostelsList
+                                // Update locations with API data
+                                locations = hostelsList.mapIndexed { index, hostel ->
+                                    // Assign different coordinates to each hostel to avoid overlap
+                                    val coordinates = when (hostel.name) {
+                                        "Posada del Peregrino" -> LatLng(25.668394809524564, -100.30311761472923)
+                                        "Divina Providencia" -> LatLng(25.68334790328978, -100.34546687358926)
+                                        "Apodaca" -> LatLng(25.791571000975924, -100.1387095558184)
+                                        else -> {
+                                            // Generate coordinates in a grid pattern for unknown hostels
+                                            val baseLat = 25.668394809524564
+                                            val baseLng = -100.30311761472923
+                                            val offset = index * 0.01 // 0.01 degree offset per hostel
+                                            LatLng(baseLat + offset, baseLng + offset)
+                                        }
+                                    }
+                                    
+                                    LocationData(
+                                        name = hostel.name,
+                                        latLng = coordinates,
+                                        details = hostel.description,
+                                        capacity = hostel.maxCapacity
+                                    )
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // API call failed, keep using demo data
+                        // Don't crash the app
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Date parsing failed, keep using demo data
+            // Don't crash the app
+        }
+    }
+    
+    // Update selected hostel data when location changes
+    LaunchedEffect(selectedLocation, hostelsResponse) {
+        selectedLocation?.let { location ->
+            hostelsResponse?.find { it.name == location.name }?.let { hostel ->
+                selectedHostelData = hostel
+            }
+        }
+    }
 
-    // Cámara
+    // Cámara - Default to Monterrey coordinates if no locations
+    val defaultLocation = LatLng(25.668394809524564, -100.30311761472923)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(locations.first().latLng, 13f)
+        position = CameraPosition.fromLatLngZoom(
+            locations.firstOrNull()?.latLng ?: defaultLocation, 
+            13f
+        )
     }
 
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -225,6 +348,14 @@ fun ReservationPage(navController: NavController) {
     // >>> Estado del diálogo de personas (movido acá porque el botón ahora está abajo)
     var showPersonDialog by remember { mutableStateOf(false) }
     var peopleCount by remember { mutableStateOf("1") }
+    
+    // Store people count in navigation state
+    LaunchedEffect(peopleCount) {
+        println("🔍 ReservePage storing peopleCount: $peopleCount")
+        navController.currentBackStackEntry
+            ?.savedStateHandle
+            ?.set("peopleCount", peopleCount)
+    }
 
     // --- UI ---
     BottomSheetScaffold(
@@ -235,14 +366,38 @@ fun ReservationPage(navController: NavController) {
         sheetContent = {
             SelectionSheet(
                 location = selectedLocation,
+                hostelData = selectedHostelData,
                 onDetailsClick = {
                     // Guarda los datos del shelter seleccionado y navega
                     selectedLocation?.let { loc ->
+                        println("🔍 ReservePage navigating to shelter:")
+                        println("  shelter_name: ${loc.name}")
+                        println("  shelter_address: ${loc.details}")
+                        
                         navController.currentBackStackEntry?.savedStateHandle?.apply {
                             set("shelter_name", loc.name)
                             set("shelter_address", loc.details)
                             set("shelter_lat", loc.latLng.latitude)
                             set("shelter_lng", loc.latLng.longitude)
+                            // Pass individual hostel data fields instead of the whole object
+                            selectedHostelData?.let { hostel ->
+                                println("  hostel_description: ${hostel.description}")
+                                set("hostel_id", hostel.id)
+                                set("hostel_description", hostel.description)
+                                set("hostel_max_capacity", hostel.maxCapacity)
+                                set("hostel_price", hostel.price)
+                                set("hostel_image_url", hostel.imageUrls.firstOrNull() ?: "")
+                                set("hostel_location_url", hostel.locationUrl)
+                            }
+                            // Pass dates through navigation
+                            if (startDate != null && endDate != null) {
+                                val startDateStr = "${startDate!!.get(Calendar.YEAR)}-${String.format("%02d", startDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", startDate!!.get(Calendar.DAY_OF_MONTH))}"
+                                val endDateStr = "${endDate!!.get(Calendar.YEAR)}-${String.format("%02d", endDate!!.get(Calendar.MONTH) + 1)}-${String.format("%02d", endDate!!.get(Calendar.DAY_OF_MONTH))}"
+                                println("  startDate: $startDateStr")
+                                println("  endDate: $endDateStr")
+                                set("startDate", startDateStr)
+                                set("endDate", endDateStr)
+                            }
                         }
                         navController.navigate("shelter")
                     }
@@ -296,12 +451,22 @@ fun ReservationPage(navController: NavController) {
                     modifier = Modifier.size(60.dp)
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
-                            contentDescription = "Número de personas",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
+                        val peopleCountInt = peopleCount.toIntOrNull() ?: 1
+                        if (peopleCountInt > 1) {
+                            Text(
+                                text = peopleCountInt.toString(),
+                                color = Color.White,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.person_add_24px),
+                                contentDescription = "Número de personas",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
                     }
                 }
 
@@ -362,9 +527,13 @@ fun ReservationPage(navController: NavController) {
                         }
 
                         scope.launch {
-                            cameraPositionState.animate(
-                                com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(loc.latLng, 15f)
-                            )
+                            try {
+                                cameraPositionState.animate(
+                                    com.google.android.gms.maps.CameraUpdateFactory.newLatLngZoom(loc.latLng, 15f)
+                                )
+                            } catch (e: Exception) {
+                                // Camera animation failed, but don't crash the app
+                            }
                         }
                     },
                     onClose = { showShelterPicker = false }
@@ -376,9 +545,39 @@ fun ReservationPage(navController: NavController) {
         if (showPersonDialog) {
             AlertDialog(
                 onDismissRequest = { showPersonDialog = false },
-                confirmButton = {
+                dismissButton = {
                     TextButton(onClick = { showPersonDialog = false }) {
-                        Text("Aceptar")
+                        Text(
+                            "Cancelar",
+                            color = Accent,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                },
+                confirmButton = {
+                    FilledTonalButton(
+                        onClick = { showPersonDialog = false },
+                        shape = RoundedCornerShape(26.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                            containerColor = Accent,
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = "Aceptar",
+                                tint = Color.White
+                            )
+                            Text(
+                                "Aceptar",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 },
                 title = {
@@ -402,36 +601,89 @@ fun ReservationPage(navController: NavController) {
                             fontSize = 18.sp
                         )
                         Spacer(Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = peopleCount,
-                            onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() } && newValue.isNotEmpty()) {
-                                    peopleCount = newValue
-                                    // 👇 guarda el valor en el back stack de "search"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Botón restar
+                            Surface(
+                                onClick = {
+                                    val current = peopleCount.toIntOrNull() ?: 1
+                                    val updated = if (current > 1) current - 1 else 1
+                                    peopleCount = updated.toString()
                                     navController.currentBackStackEntry
                                         ?.savedStateHandle
-                                        ?.set("peopleCount", newValue)
+                                        ?.set("peopleCount", peopleCount)
+                                },
+                                shape = CircleShape,
+                                color = Accent,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Remove,
+                                        contentDescription = "Disminuir",
+                                        tint = Color.White
+                                    )
                                 }
-                            },
-                            singleLine = true,
-                            // Sin label; solo el campo
-                            placeholder = {
-                                Text(
-                                    "1",
-                                    modifier = Modifier.fillMaxWidth(),
+                            }
+
+                                OutlinedTextField(
+                                    value = peopleCount,
+                                    onValueChange = { newValue ->
+                                        if (newValue.all { it.isDigit() }) {
+                                            val sanitized = if (newValue.isBlank()) "" else newValue.trimStart('0').ifBlank { "1" }
+                                            peopleCount = sanitized
+                                            println("🔍 ReservePage peopleCount updated: $peopleCount")
+                                            navController.currentBackStackEntry
+                                                ?.savedStateHandle
+                                                ?.set("peopleCount", peopleCount)
+                                        }
+                                    },
+                                singleLine = true,
+                                placeholder = {
+                                    Text(
+                                        "1",
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Center,
+                                        fontSize = 26.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                },
+                                textStyle = LocalTextStyle.current.copy(
                                     textAlign = TextAlign.Center,
                                     fontSize = 26.sp,
                                     fontWeight = FontWeight.SemiBold
-                                )
-                            },
-                            textStyle = LocalTextStyle.current.copy(
-                                textAlign = TextAlign.Center,
-                                fontSize = 26.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.width(160.dp)
-                        )
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.width(120.dp)
+                            )
+
+                            // Botón sumar
+                            Surface(
+                                onClick = {
+                                    val current = peopleCount.toIntOrNull() ?: 1
+                                    val updated = current + 1
+                                    peopleCount = updated.toString()
+                                    navController.currentBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("peopleCount", peopleCount)
+                                },
+                                shape = CircleShape,
+                                color = Accent,
+                                tonalElevation = 2.dp,
+                                modifier = Modifier.size(44.dp)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Add,
+                                        contentDescription = "Aumentar",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             )
@@ -551,6 +803,7 @@ private fun ShelterMap(
 @Composable
 private fun SelectionSheet(
     location: LocationData?,
+    hostelData: HostelData?,
     onDetailsClick: () -> Unit
 ) {
     if (location == null) return
@@ -560,60 +813,157 @@ private fun SelectionSheet(
             .fillMaxWidth()
             .padding(bottom = 8.dp)
     ) {
-        Surface(
+        // Enhanced header with image and gradient
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
-        ) {}
+                .height(200.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                shape = RoundedCornerShape(20.dp),
+                color = Accent.copy(alpha = 0.1f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Hostel image if available
+                    if (hostelData?.imageUrls != null && hostelData.imageUrls.isNotEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(hostelData.imageUrls.first())
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Hostel Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop,
+                            error = painterResource(id = R.drawable.ic_launcher_foreground),
+                            placeholder = painterResource(id = R.drawable.ic_launcher_foreground)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = "Hostel",
+                            modifier = Modifier.size(80.dp),
+                            tint = Accent.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Hostel name with better styling
             Text(
                 text = location.name,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Description if available
+            if (hostelData?.description != null) {
                 Text(
-                    text = location.capacity.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 40.sp),
-                    fontWeight = FontWeight.ExtraBold
+                    text = hostelData.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = "Cupos",
-                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp),
-                    fontWeight = FontWeight.Medium
-                )
+                Spacer(Modifier.height(16.dp))
             }
 
-            Spacer(Modifier.height(18.dp))
+            // Enhanced capacity display
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Available spots
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = location.capacity.toString(),
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Accent
+                    )
+                    Text(
+                        text = "Cupos Disponibles",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
+                // Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                )
+
+                // Max capacity if available
+                if (hostelData?.maxCapacity != null) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = hostelData.maxCapacity.toString(),
+                            style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Capacidad Total",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            // Enhanced button with icon
             FilledTonalButton(
                 onClick = onDetailsClick,
                 shape = RoundedCornerShape(28.dp),
                 modifier = Modifier
                     .height(56.dp)
                     .widthIn(min = 200.dp),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    "Detalles",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 10.dp),
+                colors = androidx.compose.material3.ButtonDefaults.filledTonalButtonColors(
+                    containerColor = Accent,
+                    contentColor = Color.White
                 )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarMonth,
+                        contentDescription = "Hacer Reservación",
+                        tint = Color.White
+                    )
+                    Text(
+                        "Hacer Reservación",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }

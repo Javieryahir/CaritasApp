@@ -1,6 +1,7 @@
 package com.example.caritasapp.reserve
 
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -30,6 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.example.caritasapp.R
+import com.example.caritasapp.data.HostelData
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -46,6 +50,14 @@ fun ShelterDetailsScreen(navController: NavController) {
     val lat   = sh?.get<Double>("shelter_lat") ?: 25.666
     val lng   = sh?.get<Double>("shelter_lng") ?: -100.316
     val latLng = LatLng(lat, lng)
+    
+    // Get hostel data from API (individual fields)
+    val hostelId = sh?.get<String>("hostel_id")
+    val hostelDescription = sh?.get<String>("hostel_description")
+    val hostelMaxCapacity = sh?.get<Int>("hostel_max_capacity")
+    val hostelAvailableSpaces = sh?.get<Int>("hostel_available_spaces")
+    val hostelImageUrl = sh?.get<String>("hostel_image_url")
+    val hostelLocationUrl = sh?.get<String>("hostel_location_url")
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(latLng, 15f)
@@ -77,14 +89,30 @@ fun ShelterDetailsScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Imagen superior (se ve detrás de wifi/batería)
-        Image(
-            painter = painterResource(id = R.drawable.shelter),
-            contentDescription = "Imagen del albergue",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp)
-        )
+        if (hostelImageUrl != null && hostelImageUrl.isNotEmpty()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(hostelImageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Imagen del albergue",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp),
+                error = painterResource(id = R.drawable.shelter),
+                placeholder = painterResource(id = R.drawable.shelter)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.shelter),
+                contentDescription = "Imagen del albergue",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp)
+            )
+        }
 
         // Contenedor principal
         Surface(
@@ -103,20 +131,74 @@ fun ShelterDetailsScreen(navController: NavController) {
             ) {
                 // Título + dirección (sin icono)
                 Text(
-                    text = name,
+                    text = name, // Use the name from location data
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(10.dp))
-                Text(
-                    text = addr,
-                    color = Color.Gray,
-                    fontSize = 20.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
+                // Description from API if available, otherwise show address
+                if (hostelDescription != null && hostelDescription.isNotEmpty()) {
+                    Text(
+                        text = hostelDescription,
+                        color = Color.Gray,
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                } else {
+                    // Only show address if we don't have API description
+                    Text(
+                        text = addr,
+                        color = Color.Gray,
+                        fontSize = 20.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                
+                // Show capacity information if available
+                if (hostelAvailableSpaces != null && hostelMaxCapacity != null) {
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Available spaces
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = hostelAvailableSpaces.toString(),
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Accent
+                            )
+                            Text(
+                                text = "Cupos Disponibles",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        
+                        // Max capacity
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = hostelMaxCapacity.toString(),
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = "Capacidad Total",
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
 
                 Spacer(Modifier.height(20.dp))
 
@@ -164,75 +246,121 @@ fun ShelterDetailsScreen(navController: NavController) {
 
                 Spacer(Modifier.height(26.dp))
 
-                // Botón "Servicios disponibles"
-                Button(
+                // Botón "Servicios disponibles" (secundario / tonal)
+                FilledTonalButton(
                     onClick = { showServices = true },
-                    shape = RoundedCornerShape(28.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Accent,
-                        contentColor = Color.White
-                    ),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(64.dp)
+                        .height(56.dp)
                 ) {
                     Text(
                         "Servicios disponibles",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
 
                 Spacer(Modifier.height(22.dp))
 
-                // Fila: "Política de Salud" + botón circular de atrás a la derecha
-                Row(
+                // Indicador de siguiente paso
+                Text(
+                    text = "Siguiente paso para reservar: Política de Salud",
+                    color = Accent,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 6.dp)
+                )
+
+                // Fixed bottom buttons with modern design
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    color = Color.White,
+                    shadowElevation = 8.dp
                 ) {
-                    // 1) Botón circular de atrás (izquierda)
-                    FilledIconButton(
-                        onClick = { navController.popBackStack() },
-                        shape = CircleShape,
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = Accent,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier.size(64.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Atrás"
-                        )
-                    }
-
-                    // 2) Botón "Política de Salud" (ocupa el resto)
-                    Button(
-                        onClick = { // dentro del onClick del botón "Política de Salud"
-                            val count = navController
-                                .getBackStackEntry("search")
-                                .savedStateHandle
-                                .get<String>("peopleCount")
-                                ?.toIntOrNull() ?: 1
-
-                            navController.navigate("health/$count")
-                        },
-                        shape = RoundedCornerShape(28.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Accent,
-                            contentColor = Color.White
-                        ),
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.MedicalServices,
-                            contentDescription = "Política de Salud",
-                            modifier = Modifier.padding(end = 12.dp)
-                        )
-                        Text("Política de Salud", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
+                        // Back button
+                        OutlinedButton(
+                            onClick = { navController.popBackStack() },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(56.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Accent
+                            ),
+                            border = BorderStroke(2.dp, Accent)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Atrás",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Atrás", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        }
+
+                        // Continue button
+                        Button(
+                            onClick = { // dentro del onClick del botón "Política de Salud"
+                                println("🔍 DetailsScreen Navigation Debug:")
+                                
+                                val count = navController
+                                    .getBackStackEntry("search")
+                                    .savedStateHandle
+                                    .get<String>("peopleCount")
+                                    ?.toIntOrNull() ?: 1
+                                
+                                println("  peopleCount: $count")
+
+                                // Pass dates through to health forms
+                                val currentHandle = navController.currentBackStackEntry?.savedStateHandle
+                                val startDate = currentHandle?.get<String>("startDate")
+                                val endDate = currentHandle?.get<String>("endDate")
+                                
+                                println("  startDate: $startDate")
+                                println("  endDate: $endDate")
+                                
+                                if (startDate != null && endDate != null) {
+                                    navController.currentBackStackEntry?.savedStateHandle?.apply {
+                                        set("startDate", startDate)
+                                        set("endDate", endDate)
+                                    }
+                                    println("  ✅ Dates passed to health forms")
+                                } else {
+                                    println("  ❌ Missing dates for health forms")
+                                }
+
+                                println("  🚀 Navigating to: health/$count")
+                                navController.navigate("health/$count")
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Accent,
+                                contentColor = Color.White,
+                                disabledContainerColor = Accent.copy(alpha = 0.6f),
+                                disabledContentColor = Color.White.copy(alpha = 0.7f)
+                            ),
+                            modifier = Modifier
+                                .height(56.dp)
+                                .weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MedicalServices,
+                                contentDescription = "Política de Salud",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Siguiente: Política de Salud", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
             }
