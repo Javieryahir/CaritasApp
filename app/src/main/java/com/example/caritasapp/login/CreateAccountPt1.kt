@@ -53,7 +53,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 
 private val Teal = Color(0xFF5D97A3)
-private const val HARDCODED_PASSWORD = "Password2000&"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,11 +66,14 @@ fun CreateAccountPt1(navController: NavController) {
     var selectedCountry by remember { mutableStateOf(countryCodes[0]) }
     var expanded by remember { mutableStateOf(false) }
     var isSigningUp by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf("") }
     
     val isLoading by authRepository.isLoading.collectAsState()
     val error by authRepository.error.collectAsState()
 
-    val canContinue = firstName.isNotBlank() && phone.length >= 8 && !isLoading
+    // Phone validation
+    val isValidPhone = phone.length == 10 && phone.all(Char::isDigit)
+    val canContinue = firstName.isNotBlank() && isValidPhone && !isLoading
 
     // Handle signup API call
     LaunchedEffect(isSigningUp) {
@@ -79,7 +81,6 @@ fun CreateAccountPt1(navController: NavController) {
             val fullPhoneNumber = "${selectedCountry.code}${phone}"
             val result = authRepository.signup(
                 phoneNumber = fullPhoneNumber,
-                password = HARDCODED_PASSWORD,
                 firstName = firstName.trim(),
                 lastName = lastName.trim()
             )
@@ -253,10 +254,15 @@ fun CreateAccountPt1(navController: NavController) {
                 // Phone number input
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { if (it.all(Char::isDigit)) phone = it },
+                    onValueChange = { 
+                        if (it.all(Char::isDigit) && it.length <= 10) {
+                            phone = it
+                            phoneError = ""
+                        }
+                    },
                     placeholder = {
                         Text(
-                            "Número",
+                            "Número (10 dígitos)",
                             fontSize = 20.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
@@ -275,15 +281,38 @@ fun CreateAccountPt1(navController: NavController) {
                         unfocusedContainerColor = Color.White,
                         focusedContainerColor = Color.White,
                         cursorColor = Teal
-                    )
+                    ),
+                    isError = phoneError.isNotEmpty() || (phone.isNotEmpty() && !isValidPhone)
                 )
             }
             
-            // Show error message if any
+            // Show phone validation error
+            if (phoneError.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    phoneError,
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+            
+            // Show phone length error
+            if (phone.isNotEmpty() && !isValidPhone) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "El número debe tener exactamente 10 dígitos",
+                    color = Color.Red,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            // Show API error message if any
             error?.let { errorMessage ->
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    errorMessage,
+                    "Error: $errorMessage",
                     color = Color.Red,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center
@@ -306,7 +335,11 @@ fun CreateAccountPt1(navController: NavController) {
 
                 FilledIconButton(
                     onClick = {
-                        isSigningUp = true
+                        if (isValidPhone) {
+                            isSigningUp = true
+                        } else {
+                            phoneError = "Por favor ingresa un número válido de 10 dígitos"
+                        }
                     },
                     enabled = canContinue,
                     shape = CircleShape,

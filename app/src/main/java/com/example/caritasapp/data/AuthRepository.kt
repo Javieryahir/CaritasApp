@@ -20,21 +20,19 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
     private val _currentUser = MutableStateFlow(sessionManager.getUser())
     val currentUser: StateFlow<UserData?> = _currentUser.asStateFlow()
     
-    suspend fun signup(phoneNumber: String, password: String, firstName: String, lastName: String): Result<SignupResponse> {
+    suspend fun signup(phoneNumber: String, firstName: String, lastName: String): Result<SignupResponse> {
         return try {
             _isLoading.value = true
             _error.value = null
             
             val request = SignupRequest(
                 phoneNumber = phoneNumber,
-                password = password,
                 firstName = firstName,
                 lastName = lastName
             )
             
             println("=== SIGNUP DEBUG ===")
             println("Phone Number: '$phoneNumber'")
-            println("Password: '$password'")
             println("First Name: '$firstName'")
             println("Last Name: '$lastName'")
             println("===================")
@@ -74,24 +72,21 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
             _error.value = null
             
             val request = LoginRequest(
-                phoneNumber = phoneNumber,
-                password = "Password2000&"
+                phoneNumber = phoneNumber
             )
             val response = apiService.login(request)
             
-            // Save the tokens from the response
-            sessionManager.saveTokens(
-                idToken = response.idToken,
-                accessToken = response.accessToken,
-                refreshToken = response.refreshToken
-            )
+            println("Login Response: User ID = ${response.userId}")
             
-            // Create a basic user object from the phone number since we don't get user data in the response
+            // Store the userId from the response
+            // Note: The new API only returns userId, no tokens
+            // The user is considered logged in with just the userId
             val userData = UserData(
-                id = "temp_id", // We'll need to get this from the JWT token or another API call
+                id = response.userId,
                 phoneNumber = phoneNumber,
-                firstName = "User", // We'll need to get this from the JWT token or another API call
-                lastName = ""
+                firstName = "User", // We don't have this info yet
+                lastName = "", // We don't have this info yet
+                email = null
             )
             sessionManager.saveUser(userData)
             _isLoggedIn.value = true
@@ -117,24 +112,20 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
             
             val response = apiService.confirmSignup(request)
             
-            println("Confirm Response: ${response.message}")
+            println("Confirm Response: User ID = ${response.userId}")
             
-            // Save the tokens from the response
-            sessionManager.saveTokens(
-                idToken = response.idToken,
-                accessToken = response.accessToken,
-                refreshToken = response.refreshToken
-            )
-            
-            // Create a basic user object from the phone number since we don't get user data in the response
+            // Store the userId from the response
+            // Note: The new API only returns userId, no tokens
+            // The user will need to login separately to get tokens
             val userData = UserData(
-                id = "temp_id", // We'll need to get this from the JWT token or another API call
+                id = response.userId,
                 phoneNumber = phoneNumber,
-                firstName = "User", // We'll need to get this from the JWT token or another API call
-                lastName = ""
+                firstName = "User", // We don't have this info yet
+                lastName = "", // We don't have this info yet
+                email = null
             )
             sessionManager.saveUser(userData)
-            _isLoggedIn.value = true
+            _isLoggedIn.value = false // User is not fully logged in until they login
             _currentUser.value = userData
             
             _isLoading.value = false
@@ -148,9 +139,15 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
     }
     
     fun logout() {
+        println("=== AUTH REPOSITORY LOGOUT ===")
+        println("Before logout - isLoggedIn: ${_isLoggedIn.value}")
+        println("Before logout - currentUser: ${_currentUser.value}")
         sessionManager.logout()
         _isLoggedIn.value = false
         _currentUser.value = null
+        println("After logout - isLoggedIn: ${_isLoggedIn.value}")
+        println("After logout - currentUser: ${_currentUser.value}")
+        println("===============================")
     }
     
     fun clearError() {

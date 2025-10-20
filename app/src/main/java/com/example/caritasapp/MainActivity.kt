@@ -13,9 +13,10 @@ import androidx.navigation.compose.rememberNavController
 import com.example.caritasapp.account.AccountScreen
 import com.example.caritasapp.reserve.ConfirmReservation
 import com.example.caritasapp.reserve.ShelterDetailsScreen
+import com.example.caritasapp.reserve.HealthFormsScreen
 import com.example.caritasapp.transport.TransportScreen
 import com.example.caritasapp.transport.WaitingPage as WaitingTransportPage
-import com.example.caritasapp.reservations.DetailsScreen as ReservationsDetailsScreen
+import com.example.caritasapp.data.ReservationData
 
 // 👇 Alias para diferenciar “mapa” vs “lista”
 import com.example.caritasapp.reserve.ReservationPage as ReservePage          // MAPA/FILTROS (antes “ReservationPage”)
@@ -38,6 +39,9 @@ fun MyApp() {
         composable("create1") { com.example.caritasapp.login.CreateAccountPt1(navController) }
         composable("create2") { com.example.caritasapp.login.CreateAccountPt2(navController) }
         composable("create3") { com.example.caritasapp.login.CreateAccountPt3(navController) }
+        
+        // Loading screen that checks for active reservations
+        composable("loading") { com.example.caritasapp.loading.LoadingScreen(navController) }
 
         // “search” = flujo de RESERVA (mapa/filtros, antes llamado ReservationPage)
         composable("search")        { ReservePage(navController) }
@@ -49,7 +53,7 @@ fun MyApp() {
 
         composable("health/{count}") { backStackEntry ->
             val count = backStackEntry.arguments?.getString("count")?.toIntOrNull() ?: 1
-            com.example.caritasapp.reserve.HealthFormsScreen(navController, count)
+            HealthFormsScreen(navController, count)
         }
 
         composable("confirm")  { ConfirmReservation(navController) }
@@ -73,7 +77,20 @@ fun MyApp() {
             )
         }
         composable("account") { AccountScreen(navController) }
-        composable("reservations_details") { ReservationsDetailsScreen(navController) }
+        
+        // Service reservation routes
+        composable("service_reservations") { com.example.caritasapp.reservations.ServiceReservationScreen(navController) }
+        composable("service_details/{serviceId}") { backStackEntry ->
+            val serviceId = backStackEntry.arguments?.getString("serviceId") ?: "1"
+            com.example.caritasapp.reservations.ServiceDetailsScreen(serviceId, navController)
+        }
+        composable("service_confirmation") { com.example.caritasapp.reservations.ServiceConfirmationScreen(navController) }
+        
+        // Reschedule reservation route
+        composable("reschedule/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            com.example.caritasapp.reservations.RescheduleReservationScreen(reservationId, navController)
+        }
     }
 }
 

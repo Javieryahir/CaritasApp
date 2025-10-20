@@ -32,9 +32,13 @@ fun LoginScreen(navController: NavController) {
     var selectedCountry by remember { mutableStateOf(countryCodes[0]) }
     var expanded by remember { mutableStateOf(false) }
     var isLoggingIn by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf("") }
     
     val isLoading by authRepository.isLoading.collectAsState()
     val error by authRepository.error.collectAsState()
+    
+    // Phone validation
+    val isValidPhone = phone.length == 10 && phone.all(Char::isDigit)
 
     // Handle login API call
     LaunchedEffect(isLoggingIn) {
@@ -44,8 +48,8 @@ fun LoginScreen(navController: NavController) {
             
             result.fold(
                 onSuccess = {
-                    // Navigate to main app
-                    navController.navigate("search")
+                    // Navigate to loading screen to check for active reservations
+                    navController.navigate("loading")
                 },
                 onFailure = {
                     // Error is already handled by the repository
@@ -140,10 +144,15 @@ fun LoginScreen(navController: NavController) {
             // Phone number input
             OutlinedTextField(
                 value = phone,
-                onValueChange = { if (it.all(Char::isDigit)) phone = it },
+                onValueChange = { 
+                    if (it.all(Char::isDigit) && it.length <= 10) {
+                        phone = it
+                        phoneError = ""
+                    }
+                },
                 placeholder = {
                     Text(
-                        "Número",
+                        "Número (10 dígitos)",
                         fontSize = 22.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -162,15 +171,42 @@ fun LoginScreen(navController: NavController) {
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
                     cursorColor = Color(0xFF5D97A3)
-                )
+                ),
+                isError = phoneError.isNotEmpty() || (phone.isNotEmpty() && !isValidPhone)
             )
         }
 
 
-        // Show error message if any
+        // Show phone validation error
+        if (phoneError.isNotEmpty()) {
+            Text(
+                phoneError,
+                color = Color.Red,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
+        }
+        
+        // Show phone length error
+        if (phone.isNotEmpty() && !isValidPhone) {
+            Text(
+                "El número debe tener exactamente 10 dígitos",
+                color = Color.Red,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
+        }
+
+        // Show API error message if any
         error?.let { errorMessage ->
             Text(
-                errorMessage,
+                "Error: $errorMessage",
                 color = Color.Red,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
@@ -182,11 +218,13 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = { 
-                if (phone.isNotBlank()) {
+                if (isValidPhone) {
                     isLoggingIn = true
+                } else {
+                    phoneError = "Por favor ingresa un número válido de 10 dígitos"
                 }
             },
-            enabled = phone.isNotBlank() && !isLoading,
+            enabled = isValidPhone && !isLoading,
             shape = RoundedCornerShape(50),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF5D97A3),

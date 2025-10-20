@@ -26,24 +26,33 @@ object NetworkModule {
             })
             .addInterceptor { chain ->
                 val request = chain.request()
-                val response = chain.proceed(request)
+                println("🌐 Making request to: ${request.url}")
+                println("🌐 Request method: ${request.method}")
+                println("🌐 Request headers: ${request.headers}")
                 
-                println("Request: ${request.method} ${request.url}")
-                println("Response: ${response.code}")
-                
-                if (response.code != 200) {
-                    println("ERROR: HTTP ${response.code}")
-                    // Try to read the response body for error details
-                    try {
-                        val responseBody = response.peekBody(Long.MAX_VALUE)
-                        val responseString = responseBody.string()
-                        println("Error Response Body: $responseString")
-                    } catch (e: Exception) {
-                        println("Could not read error response body: ${e.message}")
+                try {
+                    val response = chain.proceed(request)
+                    println("✅ Response received: ${response.code}")
+                    println("✅ Response headers: ${response.headers}")
+                    
+                    if (response.code != 200) {
+                        println("❌ ERROR: HTTP ${response.code}")
+                        // Try to read the response body for error details
+                        try {
+                            val responseBody = response.peekBody(Long.MAX_VALUE)
+                            val responseString = responseBody.string()
+                            println("❌ Error Response Body: $responseString")
+                        } catch (e: Exception) {
+                            println("❌ Could not read error response body: ${e.message}")
+                        }
                     }
+                    
+                    response
+                } catch (e: Exception) {
+                    println("❌ Network error: ${e.message}")
+                    println("❌ Error type: ${e.javaClass.simpleName}")
+                    throw e
                 }
-                
-                response
             }
             .addInterceptor { chain ->
                 val originalRequest = chain.request()
@@ -52,6 +61,9 @@ object NetworkModule {
                 // Add Bearer token if available
                 sessionManager?.getIdToken()?.let { token ->
                     requestBuilder.addHeader("Authorization", "Bearer $token")
+                    println("🔍 Adding Authorization header: Bearer ${token.take(20)}...")
+                } ?: run {
+                    println("🔍 No Authorization token available")
                 }
                 
                 chain.proceed(requestBuilder.build())
@@ -62,18 +74,19 @@ object NetworkModule {
             .build()
     }
 
-    private fun createRetrofit(sessionManager: SessionManager? = null): Retrofit {
+    private fun createRetrofit(baseUrl: String, sessionManager: SessionManager? = null): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(baseUrl)
             .client(createOkHttpClient(sessionManager))
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
     }
 
-    val apiService: ApiService = createRetrofit().create(ApiService::class.java)
+    val apiService: ApiService = createRetrofit(BuildConfig.BASE_URL).create(ApiService::class.java)
+    val onlineApiService: ApiService = createRetrofit(BuildConfig.ONLINE_URL).create(ApiService::class.java)
     
     fun createAuthenticatedApiService(sessionManager: SessionManager): ApiService {
-        return createRetrofit(sessionManager).create(ApiService::class.java)
+        return createRetrofit(BuildConfig.ONLINE_URL, sessionManager).create(ApiService::class.java)
     }
 
     fun createSessionManager(context: Context): SessionManager = SessionManager(context)
@@ -82,5 +95,23 @@ object NetworkModule {
         val sessionManager = createSessionManager(context)
         val authenticatedApiService = createAuthenticatedApiService(sessionManager)
         return AuthRepository.getInstance(authenticatedApiService, sessionManager)
+    }
+    
+    fun createReservationRepository(context: Context): ReservationRepository {
+        val sessionManager = createSessionManager(context)
+        val localApiService = createRetrofit(BuildConfig.BASE_URL, sessionManager).create(ApiService::class.java)
+        return ReservationRepository.getInstance(localApiService)
+    }
+    
+    fun createUserRepository(context: Context): UserRepository {
+        val sessionManager = createSessionManager(context)
+        val authenticatedApiService = createAuthenticatedApiService(sessionManager)
+        return UserRepository.getInstance(authenticatedApiService)
+    }
+    
+    fun createPersonRepository(context: Context): PersonRepository {
+        val sessionManager = createSessionManager(context)
+        val localApiService = createRetrofit(BuildConfig.BASE_URL, sessionManager).create(ApiService::class.java)
+        return PersonRepository.getInstance(localApiService)
     }
 }
