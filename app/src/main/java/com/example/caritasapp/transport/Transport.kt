@@ -123,7 +123,7 @@ private fun LoadingView() {
         Spacer(Modifier.height(16.dp))
         Text(
             "Verificando reservaciones...",
-            fontSize = 18.sp,
+            fontSize = 20.sp,
             color = Color.Gray,
             textAlign = TextAlign.Center
         )
@@ -151,7 +151,7 @@ private fun NoActiveReservationsView(navController: NavController) {
         
         Text(
             "No tienes reservaciones activas",
-            fontSize = 24.sp,
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
             color = Color.Gray
@@ -161,10 +161,10 @@ private fun NoActiveReservationsView(navController: NavController) {
         
         Text(
             "Para reservar transporte, primero necesitas tener una reservación activa en un albergue.",
-            fontSize = 16.sp,
+            fontSize = 18.sp,
             textAlign = TextAlign.Center,
             color = Color.Gray,
-            lineHeight = 24.sp
+            lineHeight = 26.sp
         )
         
         Spacer(Modifier.height(32.dp))
@@ -179,7 +179,7 @@ private fun NoActiveReservationsView(navController: NavController) {
         ) {
             Icon(Icons.Filled.Search, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Buscar Albergues", fontSize = 18.sp)
+            Text("Buscar Albergues", fontSize = 20.sp)
         }
     }
 }
@@ -256,28 +256,30 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     Icons.Filled.LocalTaxi,
                     contentDescription = null,
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                     tint = Color.White
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
                 Text(
                     "Reservar Transporte",
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
+                    fontSize = 26.sp,
                     color = Color.White
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
                     "Servicio de transporte seguro y confiable",
                     textAlign = TextAlign.Center,
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
@@ -332,7 +334,7 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
                     Text(
                         if (mode == Mode.GoTo) "Albergue (Lugar de Recogida)" else "Lugar de Recogida",
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         color = Color.Black
                     )
                     if (pickupReadOnly && shelterName.isNotBlank()) {
@@ -364,7 +366,7 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
                     Text(
                         if (mode == Mode.PickUp) "Albergue (Destino)" else "Destino",
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
+                        fontSize = 18.sp,
                         color = Color.Black
                     )
                     if (dropoffReadOnly && shelterName.isNotBlank()) {
@@ -392,7 +394,7 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
                 Text(
                     "Número de Personas",
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
                     color = Color.Black,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -408,7 +410,7 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
                 Text(
                     "Fecha y Hora",
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
+                    fontSize = 18.sp,
                     color = Color.Black,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -504,11 +506,11 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
                     strokeWidth = 2.dp
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Enviando...", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("Enviando...", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             } else {
                 Icon(Icons.Filled.LocalTaxi, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Reservar Transporte", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                Text("Reservar Transporte", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         
@@ -565,7 +567,7 @@ private fun TogglePill(
                 Text(
                     label,
                     color = content,
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
@@ -689,13 +691,13 @@ private fun PeopleCounter(
             ) {
                 Text(
                     text = count.toString(),
-                    fontSize = 24.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Bold,
                     color = Accent
                 )
                 Text(
                     text = if (count == 1) "persona" else "personas",
-                    fontSize = 12.sp,
+                    fontSize = 14.sp,
                     color = Color.Gray
                 )
             }
