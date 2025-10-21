@@ -86,23 +86,12 @@ fun ServiceReservationScreen(navController: NavController) {
             .background(Color.White)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            // Top App Bar
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Servicios",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
-                )
-            )
+            // Header Section
+            HeaderSection()
             
             // Content
             Surface(
@@ -131,6 +120,37 @@ fun ServiceReservationScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(start = 12.dp, end = 12.dp, bottom = 20.dp)
+        )
+    }
+}
+
+// Header Section
+@Composable
+private fun HeaderSection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Servicios",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = "Reserva servicios adicionales para tu estadía",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
         )
     }
 }

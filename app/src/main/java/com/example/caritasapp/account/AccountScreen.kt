@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,11 +83,12 @@ fun AccountScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = 20.dp)
                 .padding(bottom = 110.dp), // espacio para la bottom bar
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(Modifier.height(60.dp))
             // Loading state
             if (uiState.isLoading) {
                 CircularProgressIndicator(
@@ -96,7 +99,7 @@ fun AccountScreen(navController: NavController) {
                 Text(
                     text = "Cargando datos...",
                     color = Teal,
-                    fontSize = 16.sp
+                    fontSize = 18.sp
                 )
             } else {
                 // Avatar centrado; quedará mitad sobre teal / mitad sobre blanco
@@ -104,7 +107,7 @@ fun AccountScreen(navController: NavController) {
                     shape = CircleShape,
                     color = Color.White,
                     modifier = Modifier
-                        .size(124.dp)
+                        .size(120.dp)
                         .shadow(8.dp, CircleShape)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -112,35 +115,59 @@ fun AccountScreen(navController: NavController) {
                             imageVector = Icons.Filled.AccountCircle,
                             contentDescription = "Avatar",
                             tint = Teal,
-                            modifier = Modifier.size(115.dp)
+                            modifier = Modifier.size(110.dp)
                         )
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
                 // Capture user data in local variables to avoid smart cast issues
                 val user = uiState.user
                 val fullName = if (user != null) {
-                    "${user.firstName} ${user.lastName}".trim()
+                    val firstName = user.firstName ?: ""
+                    val lastName = user.lastName ?: ""
+                    val name = "${firstName} ${lastName}".trim()
+                    if (name.isBlank()) "Usuario" else name
                 } else {
                     "Usuario"
                 }
                 
+                // Debug logging
+                println("=== ACCOUNT SCREEN DEBUG ===")
+                println("User: $user")
+                println("User firstName: ${user?.firstName}")
+                println("User lastName: ${user?.lastName}")
+                println("Full name: $fullName")
+                println("UI State: $uiState")
+                println("============================")
+                
                 Text(
-                    text = fullName,
-                    color = Teal,
+                    text = fullName.ifBlank { "Usuario" },
+                    color = Color.White,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                Spacer(Modifier.height(8.dp))
+                
+                // Add a subtitle
+                Text(
+                    text = "Mi Cuenta",
+                    color = Color.White.copy(alpha = 0.8f),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(32.dp))
 
                 // Tarjetas con datos del usuario
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Tarjeta de teléfono
                     UserInfoCard(
@@ -157,9 +184,22 @@ fun AccountScreen(navController: NavController) {
                             value = email
                         )
                     }
+                    
+                    // Add additional info cards to make it less empty
+                    UserInfoCard(
+                        icon = Icons.Filled.Person,
+                        label = "Tipo de Usuario",
+                        value = "Usuario Registrado"
+                    )
+                    
+                    UserInfoCard(
+                        icon = Icons.Filled.Security,
+                        label = "Estado de Cuenta",
+                        value = "Activa"
+                    )
                 }
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(32.dp))
 
                 // Error message
                 uiState.error?.let { error ->
@@ -201,7 +241,7 @@ fun AccountScreen(navController: NavController) {
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
-                    Text("Cerrar Sesión", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Cerrar Sesión", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -222,24 +262,32 @@ private fun UserInfoCard(
     label: String,
     value: String
 ) {
-    Surface(
-        color = Color.White,
-        shape = RoundedCornerShape(20.dp),
-        tonalElevation = 2.dp,
-        modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 20.dp),
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = Teal,
-                modifier = Modifier.size(24.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Teal.copy(alpha = 0.1f),
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = Teal,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
             
             Spacer(Modifier.width(16.dp))
             
@@ -249,15 +297,17 @@ private fun UserInfoCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.titleSmall,
-                    color = Teal.copy(alpha = 0.8f),
-                    fontWeight = FontWeight.Medium
+                    color = Teal.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 14.sp
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = value,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF202020)
+                    color = Color(0xFF202020),
+                    fontSize = 16.sp
                 )
             }
         }
