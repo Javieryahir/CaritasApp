@@ -121,11 +121,30 @@ class ReservationRepository(
         }
     }
     
-    suspend fun getHostels(): Flow<List<HostelData>> = flow {
+    suspend fun getHostels(
+        startDate: String,
+        endDate: String,
+        limit: Int = 5,
+        page: Int = 1,
+        filters: String? = null
+    ): Flow<List<HostelData>> = flow {
         try {
-            val hostels = apiService.getHostels()
+            println("🔍 ReservationRepository - Calling API with parameters:")
+            println("  startDate: $startDate")
+            println("  endDate: $endDate")
+            println("  limit: $limit")
+            println("  page: $page")
+            println("  filters: $filters")
+            
+            val hostels = apiService.getHostels(startDate, endDate, limit, page, filters)
+            println("🔍 ReservationRepository - API returned ${hostels.size} hostels")
+            hostels.forEach { hostel ->
+                println("  - ${hostel.name} (ID: ${hostel.id})")
+            }
             emit(hostels)
         } catch (e: Exception) {
+            println("🔍 ReservationRepository - API call failed: ${e.message}")
+            println("🔍 ReservationRepository - Using mock data")
             // Fallback to mock data if API fails
             emit(getMockHostels())
         }
@@ -138,6 +157,23 @@ class ReservationRepository(
         } catch (e: Exception) {
             // Fallback to empty list if API fails
             emit(emptyList())
+        }
+    }
+    
+    suspend fun getHostelServices(hostelId: String): Flow<HostelData?> = flow {
+        try {
+            println("🔍 ReservationRepository - Fetching hostel services for ID: $hostelId")
+            val hostelData = apiService.getHostelServices(hostelId)
+            println("🔍 ReservationRepository - Hostel services response:")
+            println("  Hostel: ${hostelData.name}")
+            println("  Services count: ${hostelData.hostelServices?.size ?: 0}")
+            hostelData.hostelServices?.forEach { service ->
+                println("  - ${service.service.type} ($${service.service.price})")
+            }
+            emit(hostelData)
+        } catch (e: Exception) {
+            println("🔍 ReservationRepository - Error fetching hostel services: ${e.message}")
+            emit(null)
         }
     }
     

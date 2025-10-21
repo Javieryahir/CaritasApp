@@ -8,14 +8,17 @@ import retrofit2.http.Query
 
 interface ApiService {
     // Authentication endpoints
-    @POST("api/dev/signup")
+    @POST("api/signup")
     suspend fun signup(@Body request: SignupRequest): SignupResponse
     
-    @POST("api/dev/signup/confirm")
+    @POST("api/signup/confirm")
     suspend fun confirmSignup(@Body request: SignupConfirmRequest): SignupConfirmResponse
     
-    @POST("api/dev/login")
+    @POST("api/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
+    
+    @POST("api/login/refresh")
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): RefreshTokenResponse
     
     // Shelter endpoints
     @GET("api/shelters")
@@ -32,8 +35,14 @@ interface ApiService {
     ): List<ShelterData>
     
     // Hostels endpoints
-    @GET("api/admin/hostels")
-    suspend fun getHostels(): List<HostelData>
+    @GET("api/hostels")
+    suspend fun getHostels(
+        @Query("startDate") startDate: String,
+        @Query("endDate") endDate: String,
+        @Query("limit") limit: Int = 5,
+        @Query("page") page: Int = 1,
+        @Query("filters") filters: String? = null
+    ): List<HostelData>
     
     // Reservation endpoints
     @POST("api/reservations")
@@ -89,6 +98,9 @@ interface ApiService {
     @GET("api/admin/services")
     suspend fun getAvailableServices(): List<ServiceListItem>
     
+    @GET("api/hostels/{hostelId}")
+    suspend fun getHostelServices(@Path("hostelId") hostelId: String): HostelData
+    
     @POST("api/service-reservations")
     suspend fun createServiceReservation(@Body request: NewServiceReservationRequest): NewServiceReservationResponse
     
@@ -103,6 +115,10 @@ interface ApiService {
     // User reservations endpoint
     @GET("api/reservations/user/{userId}")
     suspend fun getUserReservation(@Path("userId") userId: String): UserReservationResponse
+    
+    // Get user reservations for quick reservation
+    @GET("api/reservations/user/{userId}")
+    suspend fun getUserReservations(@Path("userId") userId: String): List<ReservationData>
     
     // Repeat reservation endpoint
     @POST("api/reservations/repeat/{prevReservationId}")

@@ -30,13 +30,26 @@ data class UserData(
 
 @Serializable
 data class LoginResponse(
-    val userId: String
+    val message: String,
+    val idToken: String,
+    val userId: String,
+    val accessToken: String,
+    val refreshToken: String
+)
+
+@Serializable
+data class BackendResponse(
+    val id: String,
+    val firstName: String,
+    val lastName: String,
+    val phoneNumber: String
 )
 
 @Serializable
 data class SignupResponse(
     val message: String,
-    val success: Boolean? = null
+    val userConfirmed: Boolean,
+    val backendResponse: BackendResponse
 )
 
 @Serializable
@@ -47,7 +60,25 @@ data class SignupConfirmRequest(
 
 @Serializable
 data class SignupConfirmResponse(
-    val userId: String
+    val message: String,
+    val idToken: String,
+    val userId: String? = null, // Make optional since API doesn't return it directly
+    val accessToken: String,
+    val refreshToken: String
+)
+
+@Serializable
+data class RefreshTokenRequest(
+    val userId: String,
+    val refreshToken: String
+)
+
+@Serializable
+data class RefreshTokenResponse(
+    val message: String,
+    val idToken: String,
+    val accessToken: String,
+    val refreshToken: String
 )
 
 // Shelter models
@@ -131,11 +162,13 @@ data class HostelData(
     val id: String,
     val name: String,
     val description: String,
-    val price: Double,
+    val price: Double? = null, // Make optional since API doesn't return it
     val maxCapacity: Int,
     val locationUrl: String,
-    val imageUrls: List<String>,
-    val hostelServices: List<HostelService>,
+    val imageUrl: String? = null, // API returns single imageUrl, not imageUrls array
+    val imageUrls: List<String>? = null, // Keep for backward compatibility
+    val availableSpaces: Int? = null, // API returns this field
+    val hostelServices: List<HostelService>? = null, // Make optional since API doesn't return it
     val reservations: String? = null
 )
 

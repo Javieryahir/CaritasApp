@@ -6,7 +6,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
 
-class AuthRepository(private val apiService: ApiService, private val sessionManager: SessionManager) {
+class AuthRepository(
+    private val apiService: ApiService, 
+    private val onlineApiService: ApiService,
+    private val sessionManager: SessionManager
+) {
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -37,9 +41,14 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
             println("Last Name: '$lastName'")
             println("===================")
             
-            val response = apiService.signup(request)
+            val response = NetworkModule.handleApiCall { apiService.signup(request) }
             
             println("Signup Response: ${response.message}")
+            println("User ID from signup: ${response.backendResponse.id}")
+            println("User Name: ${response.backendResponse.firstName} ${response.backendResponse.lastName}")
+            
+            // Store the user ID temporarily for use during confirmation
+            sessionManager.saveTempUserId(response.backendResponse.id)
             
             // For signup, we don't get user data immediately - just confirmation
             // The user will be created after confirmation
@@ -47,16 +56,7 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
         } catch (e: Exception) {
             val errorMessage = when (e) {
                 is ApiException -> e.errorMessage
-                else -> {
-                    when {
-                        e.message?.contains("User already exists") == true -> "User already exists. Please try logging in instead."
-                        e.message?.contains("400") == true -> "Invalid request data. Please check your information."
-                        e.message?.contains("401") == true -> "Unauthorized. Please try again."
-                        e.message?.contains("404") == true -> "Service not found. Please try again later."
-                        e.message?.contains("500") == true -> "Server error. Please try again later."
-                        else -> e.message ?: "Network error"
-                    }
-                }
+                else -> e.message ?: "Network error"
             }
             _error.value = errorMessage
             println("Signup Error: ${e.message}")
@@ -74,13 +74,19 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
             val request = LoginRequest(
                 phoneNumber = phoneNumber
             )
-            val response = apiService.login(request)
+            val response = NetworkModule.handleApiCall { apiService.login(request) }
             
             println("Login Response: User ID = ${response.userId}")
+            println("Login Response: Message = ${response.message}")
             
-            // Store the userId from the response
-            // Note: The new API only returns userId, no tokens
-            // The user is considered logged in with just the userId
+            // Store the tokens from the response
+            sessionManager.saveTokens(
+                idToken = response.idToken,
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken
+            )
+            
+            // Store the user data
             val userData = UserData(
                 id = response.userId,
                 phoneNumber = phoneNumber,
@@ -93,7 +99,11 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
             _currentUser.value = userData
             Result.success(response)
         } catch (e: Exception) {
-            _error.value = e.message ?: "Network error"
+            val errorMessage = when (e) {
+                is ApiException -> e.errorMessage
+                else -> e.message ?: "Network error"
+            }
+            _error.value = errorMessage
             Result.failure(e)
         } finally {
             _isLoading.value = false
@@ -110,28 +120,43 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
                 code = code
             )
             
-            val response = apiService.confirmSignup(request)
+            val response = NetworkModule.handleApiCall { onlineApiService.confirmSignup(request) }
             
             println("Confirm Response: User ID = ${response.userId}")
+            println("Confirm Response: Message = ${response.message}")
             
-            // Store the userId from the response
-            // Note: The new API only returns userId, no tokens
-            // The user will need to login separately to get tokens
+            // Store the tokens from the response
+            sessionManager.saveTokens(
+                idToken = response.idToken,
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken
+            )
+            
+            // Store the user data
+            // Use the stored user ID from signup, or fallback to response userId
+            val userId = sessionManager.getTempUserId() ?: response.userId ?: "temp-user-id"
             val userData = UserData(
-                id = response.userId,
+                id = userId,
                 phoneNumber = phoneNumber,
                 firstName = "User", // We don't have this info yet
                 lastName = "", // We don't have this info yet
                 email = null
             )
             sessionManager.saveUser(userData)
-            _isLoggedIn.value = false // User is not fully logged in until they login
+            _isLoggedIn.value = true // User is now logged in with tokens
             _currentUser.value = userData
+            
+            // Clear the temporary user ID since we now have the full user data
+            sessionManager.clearTempUserId()
             
             _isLoading.value = false
             Result.success(response)
         } catch (e: Exception) {
-            _error.value = e.message ?: "Network error"
+            val errorMessage = when (e) {
+                is ApiException -> e.errorMessage
+                else -> e.message ?: "Network error"
+            }
+            _error.value = errorMessage
             Result.failure(e)
         } finally {
             _isLoading.value = false
@@ -150,6 +175,36 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
         println("===============================")
     }
     
+    suspend fun refreshTokens(): Result<RefreshTokenResponse> {
+        return try {
+            val userId = sessionManager.getUser()?.id ?: throw Exception("No user found")
+            val refreshToken = sessionManager.getRefreshToken() ?: throw Exception("No refresh token found")
+            
+            val request = RefreshTokenRequest(
+                userId = userId,
+                refreshToken = refreshToken
+            )
+            
+            val response = NetworkModule.handleApiCall { onlineApiService.refreshToken(request) }
+            
+            // Store the new tokens
+            sessionManager.saveTokens(
+                idToken = response.idToken,
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken
+            )
+            
+            Result.success(response)
+        } catch (e: Exception) {
+            val errorMessage = when (e) {
+                is ApiException -> e.errorMessage
+                else -> e.message ?: "Network error"
+            }
+            _error.value = errorMessage
+            Result.failure(e)
+        }
+    }
+    
     fun clearError() {
         _error.value = null
     }
@@ -158,9 +213,9 @@ class AuthRepository(private val apiService: ApiService, private val sessionMana
         @Volatile
         private var INSTANCE: AuthRepository? = null
         
-        fun getInstance(apiService: ApiService, sessionManager: SessionManager): AuthRepository {
+        fun getInstance(apiService: ApiService, onlineApiService: ApiService, sessionManager: SessionManager): AuthRepository {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AuthRepository(apiService, sessionManager).also { INSTANCE = it }
+                INSTANCE ?: AuthRepository(apiService, onlineApiService, sessionManager).also { INSTANCE = it }
             }
         }
     }

@@ -59,5 +59,25 @@ class SessionManager(context: Context) {
     fun logout() {
         prefs.edit { clear() }
     }
+    
+    fun hasAcceptedPrivacyTerms(): Boolean {
+        return prefs.getBoolean("privacy_terms_accepted", false)
+    }
+    
+    fun setPrivacyTermsAccepted(accepted: Boolean) {
+        prefs.edit { putBoolean("privacy_terms_accepted", accepted) }
+    }
+    
+    fun saveTempUserId(userId: String) {
+        prefs.edit { putString("temp_user_id", userId) }
+    }
+    
+    fun getTempUserId(): String? {
+        return prefs.getString("temp_user_id", null)
+    }
+    
+    fun clearTempUserId() {
+        prefs.edit { remove("temp_user_id") }
+    }
 }
 

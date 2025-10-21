@@ -17,14 +17,32 @@ class ApiException(
                     }
                     ApiException(statusCode, message)
                 }
-                401 -> ApiException(statusCode, "Unauthorized. Please try again.")
+                401 -> {
+                    val message = when {
+                        errorBody?.contains("token has expired") == true -> "Your session has expired. Please log in again."
+                        errorBody?.contains("Unauthorized") == true -> "Unauthorized. Please try again."
+                        else -> "Unauthorized. Please try again."
+                    }
+                    ApiException(statusCode, message)
+                }
                 404 -> ApiException(statusCode, "Service not found. Please try again later.")
-                500 -> ApiException(statusCode, "Server error. Please try again later.")
+                500 -> {
+                    val message = when {
+                        errorBody?.contains("Internal Server Error") == true -> "Server error. Please try again later."
+                        errorBody?.contains("Database") == true -> "Database error. Please try again later."
+                        errorBody?.contains("Validation") == true -> "Validation error. Please check your information."
+                        errorBody?.isNotEmpty() == true -> "Server error: $errorBody"
+                        else -> "Server error. Please try again later."
+                    }
+                    ApiException(statusCode, message)
+                }
                 else -> ApiException(statusCode, "Network error. Please try again.")
             }
         }
     }
 }
+
+
 
 
 
