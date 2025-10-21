@@ -104,6 +104,10 @@ interface ApiService {
     @GET("api/reservations/user/{userId}")
     suspend fun getUserReservation(@Path("userId") userId: String): UserReservationResponse
     
+    // Get user reservations for quick reservation
+    @GET("api/reservations/user/{userId}")
+    suspend fun getUserReservations(@Path("userId") userId: String): List<ReservationData>
+    
     // Repeat reservation endpoint
     @POST("api/reservations/repeat/{prevReservationId}")
     suspend fun repeatReservation(

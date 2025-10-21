@@ -59,5 +59,13 @@ class SessionManager(context: Context) {
     fun logout() {
         prefs.edit { clear() }
     }
+    
+    fun hasAcceptedPrivacyTerms(): Boolean {
+        return prefs.getBoolean("privacy_terms_accepted", false)
+    }
+    
+    fun setPrivacyTermsAccepted(accepted: Boolean) {
+        prefs.edit { putBoolean("privacy_terms_accepted", accepted) }
+    }
 }
 
