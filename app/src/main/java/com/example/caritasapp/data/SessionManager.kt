@@ -67,5 +67,17 @@ class SessionManager(context: Context) {
     fun setPrivacyTermsAccepted(accepted: Boolean) {
         prefs.edit { putBoolean("privacy_terms_accepted", accepted) }
     }
+    
+    fun saveTempUserId(userId: String) {
+        prefs.edit { putString("temp_user_id", userId) }
+    }
+    
+    fun getTempUserId(): String? {
+        return prefs.getString("temp_user_id", null)
+    }
+    
+    fun clearTempUserId() {
+        prefs.edit { remove("temp_user_id") }
+    }
 }
 

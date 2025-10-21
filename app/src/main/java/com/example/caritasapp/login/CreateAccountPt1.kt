@@ -151,6 +151,10 @@ fun CreateAccountPt1(navController: NavController) {
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedBorderColor = Teal,
+                    unfocusedBorderColor = Color.Gray,
                     cursorColor = Teal
                 )
             )
@@ -184,6 +188,10 @@ fun CreateAccountPt1(navController: NavController) {
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedBorderColor = Teal,
+                    unfocusedBorderColor = Color.Gray,
                     cursorColor = Teal
                 )
             )
@@ -280,6 +288,13 @@ fun CreateAccountPt1(navController: NavController) {
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = Color.White,
                         focusedContainerColor = Color.White,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = Teal,
+                        unfocusedBorderColor = Color.Gray,
+                        errorContainerColor = Color.White,
+                        errorBorderColor = Color.Red,
+                        errorTextColor = Color.Black,
                         cursorColor = Teal
                     ),
                     isError = phoneError.isNotEmpty() || (phone.isNotEmpty() && !isValidPhone)

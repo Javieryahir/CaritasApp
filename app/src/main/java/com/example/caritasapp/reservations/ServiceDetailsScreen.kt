@@ -51,6 +51,7 @@ fun ServiceDetailsScreen(serviceId: String, navController: NavController) {
     var selectedDate by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
+    var hostelServices by remember { mutableStateOf<List<HostelService>>(emptyList()) }
     
     // Load service and active reservation
     LaunchedEffect(serviceId) {
@@ -63,18 +64,44 @@ fun ServiceDetailsScreen(serviceId: String, navController: NavController) {
                 reservationRepository.getUserReservation(currentUser.id).collect { response ->
                     if (response != null && response.reservation.state == "ACTIVE") {
                         activeReservation = response.reservation
+                        
+                        // Get hostel services based on the active reservation's hostel ID
+                        val hostelId = response.reservation.hostel.id
+                        println("🔍 ServiceDetailsScreen - Fetching hostel services for ID: $hostelId")
+                        
+                        reservationRepository.getHostelServices(hostelId).collect { hostelData ->
+                            hostelData?.let { hostel ->
+                                hostelServices = hostel.hostelServices ?: emptyList()
+                                println("🔍 ServiceDetailsScreen - Loaded ${hostelServices.size} hostel services")
+                                
+                                // Find the service with matching ID
+                                val foundService = hostelServices.find { hostelService ->
+                                    hostelService.service.id == serviceId
+                                }
+                                
+                                if (foundService != null) {
+                                    // Convert HostelService to ServiceListItem
+                                    service = ServiceListItem(
+                                        id = foundService.service.id,
+                                        type = foundService.service.type,
+                                        price = foundService.service.price
+                                    )
+                                    println("🔍 ServiceDetailsScreen - Found service: ${service?.type} ($${service?.price})")
+                                } else {
+                                    println("🔍 ServiceDetailsScreen - Service not found with ID: $serviceId")
+                                }
+                                isLoading = false
+                            }
+                        }
+                    } else {
+                        isLoading = false
                     }
-                }
-                
-                // Get available services and find the one with matching ID
-                reservationRepository.getAvailableServices().collect { services ->
-                    service = services.find { it.id == serviceId }
-                    isLoading = false
                 }
             } else {
                 isLoading = false
             }
         } catch (e: Exception) {
+            println("🔍 ServiceDetailsScreen - Error loading service: ${e.message}")
             isLoading = false
         }
     }

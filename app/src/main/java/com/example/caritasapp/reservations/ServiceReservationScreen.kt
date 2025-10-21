@@ -41,6 +41,7 @@ fun ServiceReservationScreen(navController: NavController) {
     var activeReservation by remember { mutableStateOf<UserReservationData?>(null) }
     var availableServices by remember { mutableStateOf<List<ServiceListItem>>(emptyList()) }
     var serviceReservations by remember { mutableStateOf<List<UserServiceReservation>>(emptyList()) }
+    var hostelServices by remember { mutableStateOf<List<HostelService>>(emptyList()) }
     
     // Get current user ID from session
     val currentUser = sessionManager.getUser()
@@ -60,9 +61,24 @@ fun ServiceReservationScreen(navController: NavController) {
                         serviceReservations = response.reservation.serviceReservations
                             .filter { it.state == "PENDING" || it.state == "ACTIVE" }
                         
-                        // Load available services
-                        reservationRepository.getAvailableServices().collect { services ->
-                            availableServices = services
+                        // Load hostel services based on the active reservation's hostel ID
+                        val hostelId = response.reservation.hostel.id
+                        println("🔍 ServiceReservationScreen - Fetching services for hostel ID: $hostelId")
+                        
+                        reservationRepository.getHostelServices(hostelId).collect { hostelData ->
+                            hostelData?.let { hostel ->
+                                hostelServices = hostel.hostelServices ?: emptyList()
+                                println("🔍 ServiceReservationScreen - Loaded ${hostelServices.size} hostel services")
+                                
+                                // Convert hostel services to ServiceListItem format for compatibility
+                                availableServices = hostelServices.map { hostelService ->
+                                    ServiceListItem(
+                                        id = hostelService.service.id,
+                                        type = hostelService.service.type,
+                                        price = hostelService.service.price
+                                    )
+                                }
+                            }
                         }
                     } else {
                         hasActiveReservation = false
@@ -298,6 +314,9 @@ private fun ServiceListView(
                 reservation.service.id == service.id 
             }
         }
+        
+        println("🔍 ServiceListView - Available services count: ${availableServices.size}")
+        println("🔍 ServiceListView - Service reservations count: ${serviceReservations.size}")
         
         if (availableServices.isNotEmpty()) {
             items(availableServices) { service ->

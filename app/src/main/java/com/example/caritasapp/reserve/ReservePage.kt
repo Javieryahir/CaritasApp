@@ -283,7 +283,26 @@ fun ReservationPage(navController: NavController) {
                 
                 scope.launch {
                     try {
-                        reservationRepository.getHostels().collect { hostels ->
+                        println("🔍 ReservePage - Fetching hostels with parameters:")
+                        println("  startDate: $startDateStr")
+                        println("  endDate: $endDateStr")
+                        println("  limit: 5")
+                        println("  page: 1")
+                        println("  filters: null")
+                        
+                        reservationRepository.getHostels(
+                            startDate = startDateStr,
+                            endDate = endDateStr,
+                            limit = 5,
+                            page = 1,
+                            filters = null
+                        ).collect { hostels ->
+                            println("🔍 ReservePage - Hostels API response:")
+                            println("  hostels count: ${hostels?.size ?: 0}")
+                            hostels?.forEach { hostel ->
+                                println("  - ${hostel.name} (ID: ${hostel.id})")
+                            }
+                            
                             hostels?.let { hostelsList ->
                                 hostelsResponse = hostelsList
                                 // Update locations with API data
@@ -306,12 +325,15 @@ fun ReservationPage(navController: NavController) {
                                         name = hostel.name,
                                         latLng = coordinates,
                                         details = hostel.description,
-                                        capacity = hostel.maxCapacity
+                                        capacity = hostel.availableSpaces ?: hostel.maxCapacity
                                     )
                                 }
+                                println("🔍 ReservePage - Updated locations count: ${locations.size}")
                             }
                         }
                     } catch (e: Exception) {
+                        println("🔍 ReservePage - Hostels API call failed: ${e.message}")
+                        println("🔍 ReservePage - Using demo data")
                         // API call failed, keep using demo data
                         // Don't crash the app
                     }
@@ -386,7 +408,7 @@ fun ReservationPage(navController: NavController) {
                                 set("hostel_description", hostel.description)
                                 set("hostel_max_capacity", hostel.maxCapacity)
                                 set("hostel_price", hostel.price)
-                                set("hostel_image_url", hostel.imageUrls.firstOrNull() ?: "")
+                                set("hostel_image_url", hostel.imageUrl ?: hostel.imageUrls?.firstOrNull() ?: "")
                                 set("hostel_location_url", hostel.locationUrl)
                             }
                             // Pass dates through navigation
@@ -830,10 +852,11 @@ private fun SelectionSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     // Hostel image if available
-                    if (hostelData?.imageUrls != null && hostelData.imageUrls.isNotEmpty()) {
+                    val imageUrl = hostelData?.imageUrl ?: hostelData?.imageUrls?.firstOrNull()
+                    if (imageUrl != null) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(hostelData.imageUrls.first())
+                                .data(imageUrl)
                                 .crossfade(true)
                                 .build(),
                             contentDescription = "Hostel Image",

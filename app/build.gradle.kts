@@ -21,8 +21,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // API endpoints for Caritas
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:8080/\"") // Local server
-        buildConfigField("String", "ONLINE_URL", "\"http://10.0.2.2:8080/\"") // Online server
+        buildConfigField("String", "BASE_URL", "\"https://13.223.151.115/\"") // Using IP address
+        buildConfigField("String", "ONLINE_URL", "\"https://13.223.151.115/\"") // Using IP address
     }
 
     buildTypes {
