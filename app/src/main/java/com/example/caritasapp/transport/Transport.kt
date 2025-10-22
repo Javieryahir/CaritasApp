@@ -4,7 +4,9 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -237,13 +239,14 @@ private fun TransportFormScreen(navController: NavController, activeReservation:
         dropoffReadOnly = shelterName.isNotBlank() // Solo lectura si hay albergue
     }
 
-    // UI with proper spacing
+    // UI with proper spacing and scrolling
     Column(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .padding(horizontal = 16.dp)
-            .padding(bottom = 100.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 120.dp), // Increased bottom padding for better scrolling
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(16.dp))

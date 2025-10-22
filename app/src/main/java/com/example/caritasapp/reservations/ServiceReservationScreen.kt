@@ -69,6 +69,9 @@ fun ServiceReservationScreen(navController: NavController) {
                             hostelData?.let { hostel ->
                                 hostelServices = hostel.hostelServices ?: emptyList()
                                 println("🔍 ServiceReservationScreen - Loaded ${hostelServices.size} hostel services")
+                                hostelServices.forEach { hostelService ->
+                                    println("  - Service ID: ${hostelService.service.id}, Type: ${hostelService.service.type}, Price: $${hostelService.service.price}")
+                                }
                                 
                                 // Convert hostel services to ServiceListItem format for compatibility
                                 availableServices = hostelServices.map { hostelService ->
@@ -78,6 +81,9 @@ fun ServiceReservationScreen(navController: NavController) {
                                         price = hostelService.service.price
                                     )
                                 }
+                                println("🔍 ServiceReservationScreen - Converted to ${availableServices.size} available services")
+                            } ?: run {
+                                println("🔍 ServiceReservationScreen - No hostel data received for hostel ID: $hostelId")
                             }
                         }
                     } else {
@@ -281,6 +287,19 @@ private fun ServiceListView(
                     serviceReservation = serviceReservation,
                     onClick = { 
                         // Store service reservation data in navigation state
+                        println("🔍 ServiceReservationScreen - Setting navigation data for existing service:")
+                        println("  service_id: ${serviceReservation.id}")
+                        println("  service_name: ${getServiceDisplayName(serviceReservation.service.type)}")
+                        println("  service_type: ${serviceReservation.service.type}")
+                        println("  people_count: ${serviceReservation.costCount}")
+                        println("  order_date: ${serviceReservation.orderDate}")
+                        println("  service_state: ${serviceReservation.state}")
+                        println("  qr_code: ${serviceReservation.id}")
+                        
+                        // Navigate to confirmation screen
+                        navController.navigate("service_confirmation")
+                        
+                        // Set the data in the destination's savedStateHandle after navigation
                         navController.currentBackStackEntry?.savedStateHandle?.apply {
                             set("service_id", serviceReservation.id)
                             set("service_name", getServiceDisplayName(serviceReservation.service.type))
@@ -288,9 +307,8 @@ private fun ServiceListView(
                             set("people_count", serviceReservation.costCount)
                             set("order_date", serviceReservation.orderDate)
                             set("service_state", serviceReservation.state)
-                            set("qr_code", serviceReservation.externalReservationId) // Use as QR code data
+                            set("qr_code", serviceReservation.id) // Use service reservation ID as QR code data
                         }
-                        navController.navigate("service_confirmation")
                     }
                 )
             }

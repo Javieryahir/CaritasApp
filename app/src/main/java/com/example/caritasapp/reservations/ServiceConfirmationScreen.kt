@@ -34,15 +34,34 @@ private val LightAccent = Color(0xFFE0F7F8)
 @Composable
 fun ServiceConfirmationScreen(navController: NavController) {
     // Get service reservation data from navigation state
-    val serviceName = navController.currentBackStackEntry?.savedStateHandle?.get<String>("service_name") ?: "Lavadoras"
-    val peopleCount = navController.currentBackStackEntry?.savedStateHandle?.get<Int>("people_count") ?: 1
-    val orderDate = navController.currentBackStackEntry?.savedStateHandle?.get<String>("order_date") ?: "2025-10-18"
-    val serviceState = navController.currentBackStackEntry?.savedStateHandle?.get<String>("service_state") ?: "PENDING"
-    val qrCodeData = navController.currentBackStackEntry?.savedStateHandle?.get<String>("qr_code") ?: "05c31b53-c74c-4e4f-aa1f-553d1d8e8a8f"
+    val serviceName = navController.currentBackStackEntry?.savedStateHandle?.get<String>("service_name")
+    val peopleCount = navController.currentBackStackEntry?.savedStateHandle?.get<Int>("people_count")
+    val orderDate = navController.currentBackStackEntry?.savedStateHandle?.get<String>("order_date")
+    val serviceState = navController.currentBackStackEntry?.savedStateHandle?.get<String>("service_state")
+    val reservationId = navController.currentBackStackEntry?.savedStateHandle?.get<String>("qr_code")
+    
+    // Debug logging with more details
+    println("🔍 ServiceConfirmationScreen - Navigation state data:")
+    println("  service_name: $serviceName")
+    println("  people_count: $peopleCount")
+    println("  order_date: $orderDate")
+    println("  service_state: $serviceState")
+    println("  qr_code: $reservationId")
+    println("🔍 ServiceConfirmationScreen - BackStackEntry: ${navController.currentBackStackEntry}")
+    println("🔍 ServiceConfirmationScreen - SavedStateHandle: ${navController.currentBackStackEntry?.savedStateHandle}")
+    
+    // Check if we have valid data
+    val hasValidData = serviceName != null && peopleCount != null && orderDate != null && serviceState != null && reservationId != null
+    println("🔍 ServiceConfirmationScreen - Has valid data: $hasValidData")
+    
+    // Generate QR code URL with proper format
+    val qrCodeUrl = remember(reservationId) {
+        "https://caritas.automvid.store/confirm-reservation?id=$reservationId"
+    }
     
     // Generate QR code bitmap
-    val qrCodeBitmap = remember(qrCodeData) {
-        QRCodeGenerator.generateQRCode(qrCodeData, 400, 400)
+    val qrCodeBitmap = remember(qrCodeUrl) {
+        QRCodeGenerator.generateQRCode(qrCodeUrl, 400, 400)
     }
 
     Scaffold(
@@ -150,33 +169,31 @@ fun ServiceConfirmationScreen(navController: NavController) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp)
                     ) {
                         Text(
-                            text = serviceName,
+                            text = serviceName ?: "Servicio",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Accent,
-                            textAlign = TextAlign.Center
+                            color = Accent
                         )
                         
                         Spacer(Modifier.height(8.dp))
                         
                         Text(
-                            text = "Para $peopleCount persona${if (peopleCount > 1) "s" else ""}",
+                            text = "Para ${peopleCount ?: 1} persona${if ((peopleCount ?: 1) > 1) "s" else ""}",
                             fontSize = 16.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
+                            color = Color.Gray
                         )
                         
                         Spacer(Modifier.height(4.dp))
                         
                         Text(
-                            text = formatServiceDate(orderDate),
+                            text = formatServiceDate(orderDate ?: "2025-10-18"),
                             fontSize = 14.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
+                            color = Color.Gray
                         )
                     }
                 }
@@ -208,19 +225,19 @@ fun ServiceConfirmationScreen(navController: NavController) {
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                text = getServiceStateText(serviceState),
+                                text = getServiceStateText(serviceState ?: "PENDING"),
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
                         }
                         
                         Surface(
-                            color = getServiceStateColor(serviceState),
+                            color = getServiceStateColor(serviceState ?: "PENDING"),
                             shape = RoundedCornerShape(12.dp),
                             shadowElevation = 2.dp
                         ) {
                             Text(
-                                text = getServiceStateBadge(serviceState),
+                                text = getServiceStateBadge(serviceState ?: "PENDING"),
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,

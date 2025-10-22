@@ -129,10 +129,19 @@ fun AppBottomBar(navController: NavController, modifier: Modifier = Modifier) {
                             // For other tabs, use the item route
                             val target = item.route
                             println("🔍 AppBottomBar - Navigating to: $target")
-                            navController.navigate(target) {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo("search") { saveState = true }
+                            
+                            // Special handling for account screen to avoid navigation conflicts
+                            if (target == "account") {
+                                navController.navigate(target) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            } else {
+                                navController.navigate(target) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                    popUpTo("search") { saveState = true }
+                                }
                             }
                         }
                     },

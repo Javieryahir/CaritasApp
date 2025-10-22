@@ -65,34 +65,56 @@ fun ServiceDetailsScreen(serviceId: String, navController: NavController) {
                     if (response != null && response.reservation.state == "ACTIVE") {
                         activeReservation = response.reservation
                         
-                        // Get hostel services based on the active reservation's hostel ID
-                        val hostelId = response.reservation.hostel.id
-                        println("🔍 ServiceDetailsScreen - Fetching hostel services for ID: $hostelId")
+                        // Find the service in the existing service reservations
+                        val foundServiceReservation = response.reservation.serviceReservations.find { serviceReservation ->
+                            serviceReservation.service.id == serviceId
+                        }
                         
-                        reservationRepository.getHostelServices(hostelId).collect { hostelData ->
-                            hostelData?.let { hostel ->
-                                hostelServices = hostel.hostelServices ?: emptyList()
-                                println("🔍 ServiceDetailsScreen - Loaded ${hostelServices.size} hostel services")
-                                
-                                // Find the service with matching ID
-                                val foundService = hostelServices.find { hostelService ->
-                                    hostelService.service.id == serviceId
-                                }
-                                
-                                if (foundService != null) {
-                                    // Convert HostelService to ServiceListItem
-                                    service = ServiceListItem(
-                                        id = foundService.service.id,
-                                        type = foundService.service.type,
-                                        price = foundService.service.price
-                                    )
-                                    println("🔍 ServiceDetailsScreen - Found service: ${service?.type} ($${service?.price})")
-                                } else {
-                                    println("🔍 ServiceDetailsScreen - Service not found with ID: $serviceId")
+                        if (foundServiceReservation != null) {
+                            // Use the service data from the existing reservation
+                            service = ServiceListItem(
+                                id = foundServiceReservation.service.id,
+                                type = foundServiceReservation.service.type,
+                                price = foundServiceReservation.service.price
+                            )
+                            println("🔍 ServiceDetailsScreen - Found existing service: ${service?.type} ($${service?.price})")
+                            println("🔍 ServiceDetailsScreen - Service display name: ${getServiceDisplayName(service!!.type)}")
+                        } else {
+                            // If not found in existing reservations, try to fetch from hostel services
+                            val hostelId = response.reservation.hostel.id
+                            println("🔍 ServiceDetailsScreen - Service not found in existing reservations, fetching from hostel ID: $hostelId")
+                            
+                            reservationRepository.getHostelServices(hostelId).collect { hostelData ->
+                                hostelData?.let { hostel ->
+                                    hostelServices = hostel.hostelServices ?: emptyList()
+                                    println("🔍 ServiceDetailsScreen - Loaded ${hostelServices.size} hostel services")
+                                    
+                                    // Find the service with matching ID
+                                    val foundService = hostelServices.find { hostelService ->
+                                        println("🔍 Comparing: ${hostelService.service.id} == $serviceId")
+                                        hostelService.service.id == serviceId
+                                    }
+                                    
+                                    if (foundService != null) {
+                                        // Convert HostelService to ServiceListItem
+                                        service = ServiceListItem(
+                                            id = foundService.service.id,
+                                            type = foundService.service.type,
+                                            price = foundService.service.price
+                                        )
+                                        println("🔍 ServiceDetailsScreen - Found service from hostel: ${service?.type} ($${service?.price})")
+                                        println("🔍 ServiceDetailsScreen - Service display name: ${getServiceDisplayName(service!!.type)}")
+                                    } else {
+                                        println("🔍 ServiceDetailsScreen - Service not found with ID: $serviceId")
+                                        println("🔍 ServiceDetailsScreen - Available service IDs: ${hostelServices.map { it.service.id }}")
+                                    }
+                                } ?: run {
+                                    println("🔍 ServiceDetailsScreen - No hostel data received")
                                 }
                                 isLoading = false
                             }
                         }
+                        isLoading = false
                     } else {
                         isLoading = false
                     }
@@ -159,6 +181,19 @@ fun ServiceDetailsScreen(serviceId: String, navController: NavController) {
                     isSubmitting = false
                     if (response != null) {
                         // Store service reservation data in navigation state
+                        println("🔍 ServiceDetailsScreen - Setting navigation data for new service:")
+                        println("  service_id: ${response.id}")
+                        println("  service_name: ${getServiceDisplayName(service!!.type)}")
+                        println("  service_type: ${service!!.type}")
+                        println("  people_count: $peopleCount")
+                        println("  order_date: $selectedDate")
+                        println("  service_state: ${response.state}")
+                        println("  qr_code: ${response.id}")
+                        
+                        // Navigate to confirmation screen
+                        navController.navigate("service_confirmation")
+                        
+                        // Set the data in the destination's savedStateHandle after navigation
                         navController.currentBackStackEntry?.savedStateHandle?.apply {
                             set("service_id", response.id)
                             set("service_name", getServiceDisplayName(service!!.type))
@@ -166,10 +201,8 @@ fun ServiceDetailsScreen(serviceId: String, navController: NavController) {
                             set("people_count", peopleCount)
                             set("order_date", selectedDate)
                             set("service_state", response.state)
-                            set("qr_code", response.externalReservationId) // Use externalReservationId as QR code data
+                            set("qr_code", response.id) // Use service reservation ID as QR code data
                         }
-                        // Navigate to confirmation screen
-                        navController.navigate("service_confirmation")
                     } else {
                         showErrorDialog = true
                     }
