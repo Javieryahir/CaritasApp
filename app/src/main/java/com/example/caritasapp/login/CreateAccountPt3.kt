@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.caritasapp.data.NetworkModule
+import androidx.compose.ui.platform.testTag
 
 private val Teal = Color(0xFF5D97A3)
 
@@ -55,7 +56,7 @@ fun CreateAccountPt3(navController: NavController) {
     
     val prev = navController.previousBackStackEntry?.savedStateHandle
     val phone = prev?.get<String>("phone").orEmpty()
-    val fullName = prev?.get<String>("fullName").orEmpty()
+    prev?.get<String>("fullName").orEmpty()
 
     var code by remember { mutableStateOf("") }
     var isConfirming by remember { mutableStateOf(false) }
@@ -138,7 +139,8 @@ fun CreateAccountPt3(navController: NavController) {
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 64.dp),
+                    .heightIn(min = 64.dp)
+                    .testTag("codeField"),
                 colors = OutlinedTextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
@@ -174,8 +176,9 @@ fun CreateAccountPt3(navController: NavController) {
             ) {
                 FilledIconButton(
                     onClick = { navController.popBackStack() },
+                    enabled = canConfirm && !isLoading,
                     shape = CircleShape,
-                    modifier = Modifier.size(84.dp),
+                    modifier = Modifier.testTag("confirmButton").size(84.dp),
                     colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White)
                 ) {
                     Icon(

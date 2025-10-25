@@ -1,12 +1,26 @@
 package com.example.caritasapp.reserve
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -17,13 +31,33 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,7 +66,9 @@ import androidx.navigation.NavController
 import com.example.caritasapp.composables.HyperlinkText
 import kotlinx.serialization.Serializable
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 private val Accent = Color(0xFF009CA6)
 
@@ -80,7 +116,7 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                     val day = parts[2].toIntOrNull() ?: return@all false
                     year in 1900..2025 && month in 1..12 && day in 1..31
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 false
             }
         }
@@ -251,8 +287,10 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                             
                             // Store data for API call in multiple back stack entries for robustness
                             navController.currentBackStackEntry?.savedStateHandle?.set("personsData", personsData)
-                            navController.getBackStackEntry("search")?.savedStateHandle?.set("personsData", personsData)
-                            navController.getBackStackEntry("shelter")?.savedStateHandle?.set("personsData", personsData)
+                            navController.getBackStackEntry("search").savedStateHandle["personsData"] =
+                                personsData
+                            navController.getBackStackEntry("shelter").savedStateHandle["personsData"] =
+                                personsData
                             println("  ✅ personsData stored in currentBackStackEntry, search, and shelter entries")
                             
                             // Verify storage by reading it back
@@ -287,7 +325,8 @@ fun HealthFormsScreen(navController: NavController, count: Int) {
                         ),
                         modifier = Modifier
                             .height(56.dp)
-                            .weight(1f),
+                            .weight(1f)
+                            .testTag("continueButton"),
                         enabled = isFormValid
                     ) {
                         Icon(
@@ -398,7 +437,8 @@ private fun PersonFormCard(
                                 value = firstName,
                                 onChange = onFirstName,
                                 placeholder = "Nombre",
-                                isError = firstName.isNotBlank() && firstName.isBlank()
+                                isError = firstName.isNotBlank() && firstName.isBlank(),
+                                modifier = Modifier.testTag("firstNameField-$index")
                             )
                         }
 
@@ -409,7 +449,8 @@ private fun PersonFormCard(
                                 value = lastName,
                                 onChange = onLastName,
                                 placeholder = "Apellidos",
-                                isError = lastName.isNotBlank() && lastName.isBlank()
+                                isError = lastName.isNotBlank() && lastName.isBlank(),
+                                modifier = Modifier.testTag("lastNameField-$index")
                             )
                         }
                     }
@@ -421,7 +462,8 @@ private fun PersonFormCard(
                     DatePickerField(
                         value = birthDate,
                         onValueChange = onBirthDate,
-                        isError = birthDate.isNotBlank() && !isValidDateFormat(birthDate)
+                        isError = birthDate.isNotBlank() && !isValidDateFormat(birthDate),
+                        modifier = Modifier.testTag("birthDateField-$index")
                     )
 
                     Spacer(Modifier.height(20.dp))
@@ -502,7 +544,7 @@ private fun DynamicListField(
 ) {
     Column {
         ModernFieldLabel(label)
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -521,6 +563,7 @@ private fun DynamicListField(
                 },
                 label = { Text(noneLabel, fontSize = 12.sp) },
                 selected = isNone,
+                modifier = Modifier.testTag("none-$label"),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Accent.copy(alpha = 0.1f),
                     selectedLabelColor = Accent
@@ -550,9 +593,11 @@ private fun DynamicListField(
                         placeholder = placeholder,
                         isError = false,
                         enabled = true,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("input-$label-$index")
                     )
-                    
+
                     // Remove button (only show if more than one item)
                     if (items.size > 1) {
                         IconButton(
@@ -561,7 +606,9 @@ private fun DynamicListField(
                                 newItems.removeAt(index)
                                 onItemsChange(newItems)
                             },
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .testTag("remove-$label-$index")
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Remove,
@@ -573,7 +620,7 @@ private fun DynamicListField(
                     }
                 }
             }
-            
+
             // Add button
             OutlinedButton(
                 onClick = {
@@ -582,7 +629,9 @@ private fun DynamicListField(
                     onItemsChange(newItems)
                 },
                 shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("add-$label"),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Accent
                 ),
@@ -640,55 +689,6 @@ private fun ModernField(
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CenteredField(
-    value: String,
-    onChange: (String) -> Unit,
-    placeholder: String,
-    isError: Boolean = false,
-    enabled: Boolean = true
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        singleLine = true,
-        isError = isError,
-        enabled = enabled,
-        placeholder = {
-            Text(
-                placeholder,
-                fontSize = 22.sp,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        },
-        textStyle = LocalTextStyle.current.copy(
-            fontSize = 22.sp,
-            textAlign = TextAlign.Center
-        ),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 64.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            disabledContainerColor = Color.White.copy(alpha = 0.6f),
-            focusedBorderColor = Accent,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            cursorColor = Accent,
-            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-            disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    )
-}
-
-
 /* ---------- Date Picker Component ---------- */
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -696,7 +696,8 @@ private fun CenteredField(
 private fun DatePickerField(
     value: String,
     onValueChange: (String) -> Unit,
-    isError: Boolean = false
+    isError: Boolean = false,
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var showDatePicker by remember { mutableStateOf(false) }
@@ -707,7 +708,7 @@ private fun DatePickerField(
             try {
                 val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 format.parse(value) ?: Date()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Date()
             }
         } else {
@@ -761,25 +762,25 @@ private fun DatePickerField(
             datePickerDialog.show()
         }
     }
-    
+
     // Custom field with calendar icon
     OutlinedTextField(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable { showDatePicker = true },
         value = displayDate,
         onValueChange = { }, // Read-only, only opens picker
         readOnly = true,
         isError = isError,
-        placeholder = { 
+        placeholder = {
             Text(
                 "Seleccionar fecha",
                 color = Color.Gray
-            ) 
+            )
         },
         textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clickable { showDatePicker = true },
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = Color(0xFFF8F9FA),
             unfocusedContainerColor = Color(0xFFF8F9FA),
@@ -808,6 +809,7 @@ private fun DatePickerField(
             }
         }
     )
+
 }
 
 /* ---------- Helper Functions ---------- */
@@ -823,7 +825,7 @@ private fun isValidDateFormat(dateStr: String): Boolean {
             val day = parts[2].toIntOrNull() ?: return false
             year in 1900..2025 && month in 1..12 && day in 1..31
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         false
     }
 }
