@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
     // Necesario para @Serializable (JSON)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.20"
 }
@@ -17,7 +16,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // API endpoints for Caritas
@@ -34,13 +32,16 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -60,6 +61,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.navigation:navigation-compose:2.7.0")
     implementation(libs.androidx.compose.foundation.layout)
+
+    // Unit Tests
     testImplementation(libs.junit)
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
@@ -70,12 +73,26 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation("androidx.compose.ui:ui-test-junit4:1.5.4")
     testImplementation("androidx.compose.ui:ui-test-manifest:1.5.4")
+
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
+
+
+    // Android Instrumented Tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.5.0")
+
+    // *** ADD THIS - Navigation Testing ***
+    androidTestImplementation("androidx.navigation:navigation-testing:2.7.0")
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
     implementation("androidx.compose.material:material-icons-extended")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
