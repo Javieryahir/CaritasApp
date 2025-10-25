@@ -17,9 +17,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
  * Prueba de UI para CreateAccountPt3 (validación del código):
  *  - Negativo: con menos de 4 dígitos, "Confirmar" permanece deshabilitado.
  *  - Positivo: con 4+ dígitos, "Confirmar" se habilita.
- *
- * Nota: No se pulsa el botón para evitar llamadas reales a red;
- * solo verificamos la lógica de habilitación del botón (UX).
  */
 @RunWith(AndroidJUnit4::class)
 class CreateAccountPt3Test {

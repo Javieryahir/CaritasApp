@@ -16,7 +16,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
  * Prueba de UI para HealthForms:
  *  - Positivo: agregar y eliminar entradas en "Alergias".
  *  - Negativo: al activar "Ninguna", se ocultan inputs y el botón "Agregar Alergias".
- * Comentario: valida funcionalidad UX de listas dinámicas y el toggle de exclusión.
  */
 @RunWith(AndroidJUnit4::class)
 class HealthFormsUiTest {
